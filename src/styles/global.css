@@ -1509,33 +1509,82 @@ body:has(.printer-fullscreen-modal) .pos-mobile-floating-bar {
   z-index: 500 !important;
   display: flex !important;
   flex-direction: column !important;
+  align-items: stretch !important;
+  justify-content: space-between !important;
   overflow: hidden !important;
   box-shadow: none !important;
   border: none !important;
   animation: modalFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+.printer-fullscreen-header {
+  width: 100% !important;
+  box-sizing: border-box !important;
+  background: #0f172a !important;
+  color: #fff !important;
+  padding: 12px 20px !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  border-bottom: 1px solid #1e293b !important;
+  flex-shrink: 0 !important;
+  z-index: 10 !important;
+}
+
 .printer-fullscreen-viewport {
-  flex: 1;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 24px 14px 28px;
-  background: radial-gradient(circle at 50% 25%, #1e293b 0%, #090d16 85%);
-  position: relative;
+  flex: 1 !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  padding: 16px 14px 22px !important;
+  background: radial-gradient(circle at 50% 25%, #1e293b 0%, #090d16 85%) !important;
+  position: relative !important;
+  z-index: 5 !important;
 }
 
 .printer-fullscreen-footer {
-  background: #ffffff;
-  border-top: 1px solid #e2e8f0;
-  padding: 12px 18px calc(14px + env(safe-area-inset-bottom, 0px)) 18px;
-  position: sticky;
-  bottom: 0;
-  z-index: 30;
-  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.25);
-  flex-shrink: 0;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  background: rgba(15, 23, 42, 0.96) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.12) !important;
+  padding: 14px 20px calc(14px + env(safe-area-inset-bottom, 0px)) 20px !important;
+  position: sticky !important;
+  bottom: 0 !important;
+  z-index: 20 !important;
+  box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.6) !important;
+  flex-shrink: 0 !important;
+}
+
+.printer-buttons-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  width: 100%;
+}
+
+@media (max-width: 900px) {
+  .printer-buttons-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+}
+
+@media (max-width: 520px) {
+  .printer-buttons-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+}
+
+@keyframes popperShake {
+  0% { transform: rotate(0deg) scale(1); }
+  100% { transform: rotate(14deg) scale(1.15); }
 }
 
 /* Barcode Scanner Modal Styling */

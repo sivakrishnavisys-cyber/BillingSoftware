@@ -87,3 +87,43 @@ export function playPrinterFeedSound() {
   }
 }
 
+/**
+ * Plays a festive party popper pop sound with a joyful sparkle chime.
+ */
+export function playPartyPopperSound() {
+  try {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+    const now = ctx.currentTime;
+
+    // 1. Snappy cork / party popper "POP"
+    const popOsc = ctx.createOscillator();
+    const popGain = ctx.createGain();
+    popOsc.type = 'triangle';
+    popOsc.frequency.setValueAtTime(340, now);
+    popOsc.frequency.exponentialRampToValueAtTime(75, now + 0.06);
+    popGain.gain.setValueAtTime(0.28, now);
+    popGain.gain.exponentialRampToValueAtTime(0.001, now + 0.07);
+    popOsc.connect(popGain);
+    popGain.connect(ctx.destination);
+    popOsc.start(now);
+    popOsc.stop(now + 0.08);
+
+    // 2. Joyful celebration sparkle chime (C6 - E6 - G6 - C7)
+    [1046.5, 1318.5, 1567.98, 2093.0].forEach((freq, idx) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, now + 0.05 + idx * 0.05);
+      gain.gain.setValueAtTime(0.12, now + 0.05 + idx * 0.05);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.05 + idx * 0.05 + 0.35);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now + 0.05 + idx * 0.05);
+      osc.stop(now + 0.05 + idx * 0.05 + 0.36);
+    });
+  } catch {
+    // Fail-safe
+  }
+}
+
