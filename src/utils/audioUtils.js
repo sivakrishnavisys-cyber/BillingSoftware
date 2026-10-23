@@ -59,3 +59,31 @@ export function playSuccessChime() {
     // Fail-safe
   }
 }
+
+/**
+ * Plays an authentic thermal receipt printer mechanical paper feed sound.
+ */
+export function playPrinterFeedSound() {
+  try {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+    const now = ctx.currentTime;
+    // Series of mechanical stepper motor ticks
+    for (let i = 0; i < 8; i++) {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sawtooth';
+      const freq = 280 + (i % 2) * 60;
+      osc.frequency.setValueAtTime(freq, now + i * 0.14);
+      gain.gain.setValueAtTime(0.04, now + i * 0.14);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + i * 0.14 + 0.08);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now + i * 0.14);
+      osc.stop(now + i * 0.14 + 0.09);
+    }
+  } catch {
+    // Fail-safe
+  }
+}
+

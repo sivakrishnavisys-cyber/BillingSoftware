@@ -91,16 +91,21 @@ export function validateCheckout(items, products) {
   }
 }
 
-export function completeCheckout(state, {
-  items,
-  billDiscountType,
-  billDiscountValue,
-  paymentMethod,
-  amountPaidPaise,
-  customerId,
-  customerName,
-  customerPhone,
-}) {
+export function completeCheckout(state, payload = {}) {
+  // Support both flat params and nested objects ({ payment, customer, summary })
+  const items = payload.items || [];
+  const billDiscountType = payload.billDiscountType || 'amount';
+  const billDiscountValue = payload.billDiscountValue || 0;
+
+  const paymentMethod = payload.paymentMethod || payload.payment?.paymentMethod || 'cash';
+  const amountPaidPaise = payload.amountPaidPaise !== undefined 
+    ? payload.amountPaidPaise 
+    : (payload.payment?.amountPaidPaise !== undefined ? payload.payment.amountPaidPaise : undefined);
+
+  const customerId = payload.customerId || payload.customer?.id || payload.payment?.customerId || null;
+  const customerName = payload.customerName || payload.customer?.name || payload.payment?.customerName || '';
+  const customerPhone = payload.customerPhone || payload.customer?.phone || payload.payment?.customerPhone || '';
+
   validateCheckout(items, state.products);
   const summary = summarizeCart(items, {
     billDiscountType,
@@ -110,11 +115,12 @@ export function completeCheckout(state, {
   });
   if (summary.grandTotalPaise < 0) throw new Error('Bill total is not valid.');
 
-  const paid = roundPaise(amountPaidPaise);
-  if (paymentMethod === 'cash' && paid < summary.grandTotalPaise) {
-    throw new Error('Cash received is less than the bill total.');
+  const grandTotal = summary.grandTotalPaise;
+  const paid = amountPaidPaise !== undefined ? roundPaise(amountPaidPaise) : grandTotal;
+  if (paymentMethod === 'cash' && paid < grandTotal) {
+    throw new Error(`Cash received (${paid / 100}) is less than the bill total (${grandTotal / 100}).`);
   }
-  const amountPaid = paymentMethod === 'cash' ? paid : summary.grandTotalPaise;
+  const amountPaid = paymentMethod === 'cash' ? paid : grandTotal;
   const { invoiceNumber, invoiceSeq } = nextInvoiceNumber(state);
   const createdAt = new Date().toISOString();
 
@@ -185,5 +191,7 @@ export function completeCheckout(state, {
 
   next = applySaleDeductions(next, invoice);
   next.lastInvoice = invoice;
+  next.invoice = invoice;
+  next.state = next;
   return next;
 }

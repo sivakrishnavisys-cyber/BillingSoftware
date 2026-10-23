@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Calendar, Download, Eye, FileText, Filter, IndianRupee, Printer, Receipt as ReceiptIcon, Search } from 'lucide-react';
 import EmptyState from '../components/EmptyState';
 import PrintStage from '../components/PrintStage';
+import PrinterAnimationModal from '../components/PrinterAnimationModal';
 import Receipt from '../components/Receipt';
 import StatCard from '../components/StatCard';
 import { useStore } from '../context/StoreContext';
@@ -18,6 +19,7 @@ export default function SalesHistory() {
   const [to, setTo] = useState('');
   const [method, setMethod] = useState('all');
   const [printInvoice, setPrintInvoice] = useState(null);
+  const [printerAnimationOpen, setPrinterAnimationOpen] = useState(false);
   const [detail, setDetail] = useState(null);
   const [previewLayout, setPreviewLayout] = useState(settings.receiptLayout || '80mm');
 
@@ -247,8 +249,11 @@ export default function SalesHistory() {
                         <button
                           type="button"
                           className="btn btn-ghost"
-                          onClick={() => { setPrintInvoice(inv); setPreviewLayout(settings.receiptLayout || '80mm'); }}
-                          title="Reprint Receipt (Never deducts stock again)"
+                          onClick={() => {
+                            setPrintInvoice(inv);
+                            setPrinterAnimationOpen(true);
+                          }}
+                          title="Reprint Receipt with Animated Printer"
                         >
                           <Printer size={14} /> Reprint
                         </button>
@@ -300,7 +305,10 @@ export default function SalesHistory() {
                   <button
                     type="button"
                     className="btn btn-ghost btn-sm"
-                    onClick={() => { setPrintInvoice(inv); setPreviewLayout(settings.receiptLayout || '80mm'); }}
+                    onClick={() => {
+                      setPrintInvoice(inv);
+                      setPrinterAnimationOpen(true);
+                    }}
                   >
                     <Printer size={14} /> Reprint
                   </button>
@@ -373,9 +381,25 @@ export default function SalesHistory() {
         </div>
       ) : null}
 
+      {/* Animated Thermal Receipt Printer Modal */}
+      <PrinterAnimationModal
+        open={printerAnimationOpen}
+        invoice={printInvoice}
+        shop={shop}
+        onClose={() => setPrinterAnimationOpen(false)}
+        onStartNewBill={() => {
+          setPrinterAnimationOpen(false);
+          setPrintInvoice(null);
+        }}
+        onOpenStandardPrint={() => {
+          setPrinterAnimationOpen(false);
+          window.print();
+        }}
+      />
+
       {/* Print Stage */}
       <PrintStage
-        open={Boolean(printInvoice)}
+        open={Boolean(printInvoice) && !printerAnimationOpen}
         title={`Reprint ${printInvoice?.invoiceNumber || ''}`}
         extraClass={`receipt-print layout-${previewLayout}`}
         onClose={() => setPrintInvoice(null)}

@@ -571,6 +571,27 @@
   }
 }
 
+@media (max-width: 640px) {
+  .pos-top-bar {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 8px 10px;
+  }
+  .pos-customer-selector {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .pos-meta-status {
+    width: 100%;
+    justify-content: flex-end;
+    gap: 6px;
+  }
+  .pos-meta-status .btn {
+    padding: 6px 10px;
+    font-size: 0.78rem;
+  }
+}
+
 /* Floating Bottom Checkout Bar for Mobile Catalog Mode */
 .pos-mobile-floating-bar {
   position: fixed;

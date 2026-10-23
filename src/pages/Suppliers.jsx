@@ -438,8 +438,8 @@ export default function Suppliers() {
       </section>
 
       {/* Main Feature Tabs */}
-      <div className="card filter-bar" style={{ marginBottom: 14, padding: '8px 12px' }}>
-        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', width: '100%' }}>
+      <div className="card filter-bar" style={{ marginBottom: 14, padding: '8px 10px', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+        <div style={{ display: 'flex', gap: 8, width: '100%', flexWrap: 'nowrap', whiteSpace: 'nowrap' }}>
           <button
             type="button"
             className={`chip ${activeTab === 'suppliers' ? 'active' : ''}`}
@@ -828,7 +828,8 @@ export default function Suppliers() {
             </div>
           </div>
 
-          <div className="table-wrap card">
+          {/* Desktop Table View */}
+          <div className="table-wrap card desktop-table-view">
             <table className="data-table">
               <thead>
                 <tr>
@@ -861,6 +862,35 @@ export default function Suppliers() {
                 ))}
               </tbody>
             </table>
+          </div>
+
+          {/* Mobile Touch Cards View */}
+          <div className="mobile-cards-view">
+            {priceComparisonList.slice(0, 30).map((row) => (
+              <div key={row.product.id} className="mobile-entity-card card">
+                <div className="card-top-row">
+                  <div>
+                    <strong className="entity-title">{row.product.name}</strong>
+                    <span className="muted tiny">{row.product.sku} · {row.product.category}</span>
+                  </div>
+                  <span className="badge badge-in">+{row.marginPercent}% Margin</span>
+                </div>
+                <div className="card-detail-grid">
+                  <div>
+                    <span className="tiny muted">Selling MRP</span>
+                    <div className="card-stock-val">{formatINR(row.product.sellingPricePaise)}</div>
+                    <span className="tiny muted">Current: {formatINR(row.currentCostPaise)}</span>
+                  </div>
+                  <div>
+                    <span className="tiny muted">Lowest Quote Vendor</span>
+                    <strong style={{ fontSize: '0.85rem', color: 'var(--green)' }}>{row.bestSupplier}</strong>
+                    <div className="card-highlight-val" style={{ color: 'var(--green)', fontSize: '1.05rem' }}>
+                      Best: {formatINR(row.minCostPaise)}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </section>
       ) : null}

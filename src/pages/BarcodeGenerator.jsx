@@ -79,87 +79,117 @@ export default function BarcodeGenerator() {
         </div>
       </div>
 
-      <div className="filter-bar card">
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search products by name, SKU, or barcode"
-          style={{ minWidth: '220px' }}
-        />
+      <div className="card" style={{ marginBottom: 14, padding: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {/* Row 1: Search & Filters */}
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+          <div style={{ flex: '2 1 220px' }}>
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search products by name, SKU, or barcode..."
+              className="form-input"
+              style={{ width: '100%' }}
+            />
+          </div>
 
-        <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)}>
-          <option value="all">All Categories</option>
-          {CATEGORIES.map((c) => (
-            <option key={c} value={c}>{c}</option>
-          ))}
-        </select>
+          <div style={{ flex: '1 1 140px' }}>
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="form-input"
+              style={{ width: '100%' }}
+            >
+              <option value="all">All Categories</option>
+              {CATEGORIES.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          </div>
 
-        <select value={size} onChange={(e) => setSize(e.target.value)}>
-          {SIZES.map((s) => (
-            <option key={s.id} value={s.id}>{s.label}</option>
-          ))}
-        </select>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span className="small muted">Copies:</span>
-          <input
-            type="number"
-            min="1"
-            max="100"
-            value={copies}
-            onChange={(e) => setCopies(e.target.value)}
-            style={{ width: '65px', padding: '8px' }}
-            title="Number of copies per selected product"
-          />
+          <div style={{ flex: '1 1 180px' }}>
+            <select
+              value={size}
+              onChange={(e) => setSize(e.target.value)}
+              className="form-input"
+              style={{ width: '100%' }}
+            >
+              {SIZES.map((s) => (
+                <option key={s.id} value={s.id}>{s.label}</option>
+              ))}
+            </select>
+          </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span className="small muted">Packed Date:</span>
-          <input
-            type="date"
-            value={packedDate}
-            onChange={(e) => setPackedDate(e.target.value)}
-            style={{ padding: '6px 8px', fontSize: '0.82rem' }}
-            title="Packed / Mfg date printed on barcode sticker"
-          />
+        {/* Row 2: Copies and Dates */}
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', paddingTop: 6, borderTop: '1px dashed var(--border)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: '1 1 120px' }}>
+            <span className="small muted">Copies:</span>
+            <input
+              type="number"
+              min="1"
+              max="100"
+              value={copies}
+              onChange={(e) => setCopies(e.target.value)}
+              className="form-input"
+              style={{ width: '70px', padding: '6px 8px' }}
+              title="Number of copies per selected product"
+            />
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: '1 1 160px' }}>
+            <span className="small muted">Packed:</span>
+            <input
+              type="date"
+              value={packedDate}
+              onChange={(e) => setPackedDate(e.target.value)}
+              className="form-input"
+              style={{ padding: '6px 8px' }}
+              title="Packed / Mfg date printed on barcode sticker"
+            />
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: '1 1 170px' }}>
+            <span className="small muted">Exp Override:</span>
+            <input
+              type="date"
+              value={expiryOverride}
+              onChange={(e) => setExpiryOverride(e.target.value)}
+              className="form-input"
+              style={{ padding: '6px 8px' }}
+              title="Override expiry date (leave empty to use product expiry)"
+            />
+          </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span className="small muted">Override Exp:</span>
-          <input
-            type="date"
-            value={expiryOverride}
-            onChange={(e) => setExpiryOverride(e.target.value)}
-            style={{ padding: '6px 8px', fontSize: '0.82rem' }}
-            title="Override expiry date (leave empty to use product expiry)"
-          />
+        {/* Row 3: Action Buttons */}
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', paddingTop: 6, borderTop: '1px dashed var(--border)' }}>
+          <button type="button" className="btn btn-ghost btn-sm" onClick={selectAllVisible}>
+            <CheckSquare size={15} /> Select All ({list.length})
+          </button>
+
+          <button type="button" className="btn btn-ghost btn-sm" onClick={clearSelection} disabled={!selected.length}>
+            <Square size={15} /> Clear ({selected.length})
+          </button>
+
+          <button
+            type="button"
+            className="btn btn-primary btn-sm"
+            disabled={!chosen.length}
+            onClick={() => printNow('labels')}
+            style={{ marginLeft: 'auto' }}
+          >
+            <Printer size={15} /> Print Selected ({chosen.length * (Number(copies) || 1)})
+          </button>
+
+          <button
+            type="button"
+            className="btn btn-ghost btn-sm"
+            disabled={!chosen.length}
+            onClick={() => printNow('a4')}
+          >
+            <Grid size={15} /> A4 Sheet Grid
+          </button>
         </div>
-
-        <button type="button" className="btn btn-ghost" onClick={selectAllVisible}>
-          <CheckSquare size={16} /> Select All ({list.length})
-        </button>
-
-        <button type="button" className="btn btn-ghost" onClick={clearSelection} disabled={!selected.length}>
-          <Square size={16} /> Clear ({selected.length})
-        </button>
-
-        <button
-          type="button"
-          className="btn btn-primary"
-          disabled={!chosen.length}
-          onClick={() => printNow('labels')}
-        >
-          <Printer size={16} /> Print Selected ({chosen.length * (Number(copies) || 1)} labels)
-        </button>
-
-        <button
-          type="button"
-          className="btn btn-ghost"
-          disabled={!chosen.length}
-          onClick={() => printNow('a4')}
-        >
-          <Grid size={16} /> A4 Sheet Grid
-        </button>
       </div>
 
       <div className="selection-status-bar">

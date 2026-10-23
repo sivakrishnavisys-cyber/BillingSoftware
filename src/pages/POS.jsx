@@ -30,6 +30,7 @@ import BarcodeScanner from '../components/BarcodeScanner';
 import BillItemTable from '../components/BillItemTable';
 import PaymentModal from '../components/PaymentModal';
 import PrintStage from '../components/PrintStage';
+import PrinterAnimationModal from '../components/PrinterAnimationModal';
 import Receipt from '../components/Receipt';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { useStore } from '../context/StoreContext';
@@ -79,6 +80,7 @@ export default function POS() {
   const [payInitialMethod, setPayInitialMethod] = useState('cash');
   const [clearOpen, setClearOpen] = useState(false);
   const [printInvoice, setPrintInvoice] = useState(null);
+  const [printerAnimationOpen, setPrinterAnimationOpen] = useState(false);
   const [receiptLayout, setReceiptLayout] = useState(settings.receiptLayout || '80mm');
   const [flashMsg, setFlashMsg] = useState(null);
 
@@ -196,25 +198,33 @@ export default function POS() {
       let createdInvoice = null;
 
       update((prev) => {
-        const result = completeCheckout(prev, {
+        const nextState = completeCheckout(prev, {
           items,
-          summary: totals,
-          customer: activeCustomer,
-          payment: paymentDetails,
-          createdBy: 'Cashier Terminal',
+          billDiscountType,
+          billDiscountValue,
+          paymentMethod: paymentDetails?.paymentMethod || 'cash',
+          amountPaidPaise: paymentDetails?.amountPaidPaise,
+          customerId: paymentDetails?.customerId || activeCustomer?.id || null,
+          customerName: paymentDetails?.customerName || activeCustomer?.name || '',
+          customerPhone: paymentDetails?.customerPhone || activeCustomer?.phone || '',
         });
-        createdInvoice = result.invoice;
-        return result.state;
+        createdInvoice = nextState?.lastInvoice || nextState?.invoice || nextState?.invoices?.[0];
+        return nextState;
       });
+
+      if (!createdInvoice) {
+        throw new Error('Failed to record invoice.');
+      }
 
       playSuccessChime();
       showToast(`Bill ${createdInvoice.invoiceNumber} completed successfully!`, 'success');
       setItems([]);
       setPayOpen(false);
       setPrintInvoice(createdInvoice);
+      setPrinterAnimationOpen(true);
       setMobileTab('cart');
     } catch (err) {
-      showToast(err.message, 'error');
+      showToast(err.message || 'Error completing checkout', 'error');
     } finally {
       lockingRef.current = false;
     }
@@ -1249,9 +1259,28 @@ export default function POS() {
         }}
       />
 
-      {/* Print Stage */}
+      {/* Animated POS Thermal Printer Modal */}
+      <PrinterAnimationModal
+        open={printerAnimationOpen}
+        invoice={printInvoice}
+        shop={shop}
+        onClose={() => setPrinterAnimationOpen(false)}
+        onStartNewBill={() => {
+          setPrinterAnimationOpen(false);
+          setPrintInvoice(null);
+          setItems([]);
+          setSelectedCustomerId('');
+          setOmniQuery('');
+        }}
+        onOpenStandardPrint={() => {
+          setPrinterAnimationOpen(false);
+          window.print();
+        }}
+      />
+
+      {/* Print Stage (for Manual / A4 Format Preview) */}
       <PrintStage
-        open={Boolean(printInvoice)}
+        open={Boolean(printInvoice) && !printerAnimationOpen}
         title={`Invoice ${printInvoice?.invoiceNumber || ''}`}
         extraClass={`receipt-print layout-${receiptLayout}`}
         onClose={() => setPrintInvoice(null)}

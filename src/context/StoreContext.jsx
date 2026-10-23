@@ -15,6 +15,10 @@ export function StoreProvider({ children }) {
   const update = useCallback((mutator) => {
     setState((prev) => {
       const next = typeof mutator === 'function' ? mutator(prev) : mutator;
+      if (!next) {
+        console.error('Store update mutator returned undefined or null. Keeping previous state.');
+        return prev;
+      }
       const { lastInvoice, createdProduct, createdCustomer, lastKhataTx, ...persistable } = next;
       saveState(persistable);
       return next;
