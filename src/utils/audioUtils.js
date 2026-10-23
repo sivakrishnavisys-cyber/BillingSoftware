@@ -164,3 +164,45 @@ export function playPartyPopperSound() {
   }
 }
 
+/**
+ * Plays an authentic crisp paper tearing / ripping sound.
+ */
+export function playPaperTearSound() {
+  try {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+    const now = ctx.currentTime;
+    const bufferSize = Math.floor(ctx.sampleRate * 0.22);
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = (Math.random() * 2 - 1) * (Math.random() > 0.2 ? 0.9 : 1.6);
+    }
+
+    const noise = ctx.createBufferSource();
+    noise.buffer = buffer;
+
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.setValueAtTime(1400, now);
+    filter.frequency.exponentialRampToValueAtTime(3400, now + 0.07);
+    filter.frequency.exponentialRampToValueAtTime(1200, now + 0.2);
+    filter.Q.setValueAtTime(2.2, now);
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.001, now);
+    gain.gain.linearRampToValueAtTime(0.32, now + 0.03);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.21);
+
+    noise.connect(filter);
+    filter.connect(gain);
+    gain.connect(ctx.destination);
+
+    noise.start(now);
+    noise.stop(now + 0.22);
+  } catch {
+    // Fail-safe
+  }
+}
+

@@ -1493,8 +1493,9 @@ body:has(.printer-fullscreen-modal) .pos-mobile-floating-bar {
   transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s ease;
 }
 
-/* Full-Screen Thermal Receipt Printing View (Paytm POS Machine Style) */
-.printer-fullscreen-modal {
+/* Direct Minimalist Thermal Receipt Printing & Tear Overlay */
+.printer-fullscreen-modal,
+.printer-direct-overlay {
   position: fixed !important;
   inset: 0 !important;
   width: 100vw !important;
@@ -1503,87 +1504,43 @@ body:has(.printer-fullscreen-modal) .pos-mobile-floating-bar {
   max-width: 100vw !important;
   max-height: 100dvh !important;
   margin: 0 !important;
-  padding: 0 !important;
+  padding: 16px !important;
   border-radius: 0 !important;
-  background: rgba(10, 22, 44, 0.76) !important;
-  backdrop-filter: blur(18px) !important;
-  -webkit-backdrop-filter: blur(18px) !important;
+  background: rgba(10, 20, 38, 0.62) !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
   z-index: 500 !important;
   display: flex !important;
   flex-direction: column !important;
-  align-items: stretch !important;
-  justify-content: space-between !important;
+  align-items: center !important;
+  justify-content: center !important;
   overflow: hidden !important;
   box-shadow: none !important;
   border: none !important;
+  cursor: pointer !important;
+  user-select: none !important;
   animation: modalFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-.printer-fullscreen-header {
-  width: 100% !important;
-  box-sizing: border-box !important;
-  background: rgba(0, 41, 112, 0.92) !important;
-  color: #fff !important;
-  padding: 12px 20px !important;
-  display: flex !important;
-  justify-content: space-between !important;
-  align-items: center !important;
-  border-bottom: 1px solid rgba(0, 185, 245, 0.3) !important;
-  flex-shrink: 0 !important;
-  z-index: 10 !important;
-  backdrop-filter: blur(12px) !important;
-  -webkit-backdrop-filter: blur(12px) !important;
+.printer-direct-bill {
+  transform-origin: top center;
+  transition: transform 0.42s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.42s ease, filter 0.42s ease;
 }
 
-.printer-fullscreen-viewport {
-  flex: 1 !important;
-  width: 100% !important;
-  box-sizing: border-box !important;
-  overflow-y: auto !important;
-  -webkit-overflow-scrolling: touch !important;
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  padding: 16px 14px 22px !important;
-  background: transparent !important;
-  position: relative !important;
-  z-index: 5 !important;
+.printer-direct-bill.tearing {
+  transform: translateY(140px) rotate(6deg) scale(0.92) !important;
+  opacity: 0 !important;
+  filter: blur(3px) !important;
+  pointer-events: none !important;
 }
 
-.printer-fullscreen-footer {
-  width: 100% !important;
-  box-sizing: border-box !important;
-  background: rgba(4, 18, 48, 0.94) !important;
-  backdrop-filter: blur(16px) !important;
-  -webkit-backdrop-filter: blur(16px) !important;
-  border-top: 1px solid rgba(0, 185, 245, 0.25) !important;
-  padding: 14px 20px calc(14px + env(safe-area-inset-bottom, 0px)) 20px !important;
-  position: sticky !important;
-  bottom: 0 !important;
-  z-index: 20 !important;
-  box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.6) !important;
-  flex-shrink: 0 !important;
+.tear-hint-pill {
+  animation: tearPulse 1.8s ease-in-out infinite alternate;
 }
 
-.printer-buttons-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-  width: 100%;
-}
-
-@media (max-width: 900px) {
-  .printer-buttons-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
-  }
-}
-
-@media (max-width: 520px) {
-  .printer-buttons-grid {
-    grid-template-columns: 1fr;
-    gap: 8px;
-  }
+@keyframes tearPulse {
+  0% { transform: scale(1); opacity: 0.85; }
+  100% { transform: scale(1.06); opacity: 1; }
 }
 
 @keyframes popperShake {
