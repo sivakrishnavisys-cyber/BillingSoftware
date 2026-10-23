@@ -50,7 +50,7 @@ import { formatINR, parseRupeeInput } from '../utils/currencyUtils';
 import { exportInvoicePdf } from '../utils/pdfReceiptUtils';
 
 export default function POS() {
-  const { products, settings, shop, customers, invoices, heldBills = [], update, showToast } = useStore();
+  const { state, products, settings, shop, customers, invoices, heldBills = [], update, showToast } = useStore();
   const { t } = useLanguage();
 
   // Search & Cart state
@@ -195,29 +195,31 @@ export default function POS() {
     lockingRef.current = true;
 
     try {
-      let createdInvoice = null;
-
-      update((prev) => {
-        const nextState = completeCheckout(prev, {
-          items,
-          billDiscountType,
-          billDiscountValue,
-          paymentMethod: paymentDetails?.paymentMethod || 'cash',
-          amountPaidPaise: paymentDetails?.amountPaidPaise,
-          customerId: paymentDetails?.customerId || activeCustomer?.id || null,
-          customerName: paymentDetails?.customerName || activeCustomer?.name || '',
-          customerPhone: paymentDetails?.customerPhone || activeCustomer?.phone || '',
-        });
-        createdInvoice = nextState?.lastInvoice || nextState?.invoice || nextState?.invoices?.[0];
-        return nextState;
+      // 1. Calculate and generate the invoice synchronously
+      const nextState = completeCheckout(state, {
+        items,
+        billDiscountType,
+        billDiscountValue,
+        paymentMethod: paymentDetails?.paymentMethod || 'cash',
+        amountPaidPaise: paymentDetails?.amountPaidPaise,
+        customerId: paymentDetails?.customerId || activeCustomer?.id || null,
+        customerName: paymentDetails?.customerName || activeCustomer?.name || '',
+        customerPhone: paymentDetails?.customerPhone || activeCustomer?.phone || '',
       });
 
+      const createdInvoice = nextState?.lastInvoice || nextState?.invoices?.[0];
       if (!createdInvoice) {
         throw new Error('Failed to record invoice.');
       }
 
+      // 2. Commit updated state to StoreContext
+      update(nextState);
+
+      // 3. Play chime and notify
       playSuccessChime();
       showToast(`Bill ${createdInvoice.invoiceNumber} completed successfully!`, 'success');
+
+      // 4. Reset cart and show animated printer modal
       setItems([]);
       setPayOpen(false);
       setPrintInvoice(createdInvoice);

@@ -19,8 +19,12 @@ export function StoreProvider({ children }) {
         console.error('Store update mutator returned undefined or null. Keeping previous state.');
         return prev;
       }
-      const { lastInvoice, createdProduct, createdCustomer, lastKhataTx, ...persistable } = next;
-      saveState(persistable);
+      const { lastInvoice, invoice, state: _circ, createdProduct, createdCustomer, lastKhataTx, ...persistable } = next;
+      try {
+        saveState(persistable);
+      } catch (err) {
+        console.error('Failed to save state to localStorage:', err);
+      }
       return next;
     });
   }, []);

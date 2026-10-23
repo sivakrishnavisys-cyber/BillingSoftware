@@ -351,12 +351,12 @@ export default function PrinterAnimationModal({
             {/* Receipt Meta */}
             <div style={{ fontSize: 10, borderBottom: '1px dashed #94a3b8', paddingBottom: 4, marginBottom: 6 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span>Bill: <strong>{invoice.invoiceNumber}</strong></span>
-                <span>{new Date(invoice.createdAt).toLocaleDateString('en-IN')}</span>
+                <span>Bill: <strong>{invoice.invoiceNumber || 'INV-TEMP'}</strong></span>
+                <span>{new Date(invoice.createdAt || Date.now()).toLocaleDateString('en-IN')}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span>Cust: {invoice.customerName || 'Walk-in'}</span>
-                <span>{paymentLabel(invoice.paymentMethod).toUpperCase()}</span>
+                <span>{paymentLabel(invoice.paymentMethod || 'cash').toUpperCase()}</span>
               </div>
             </div>
 

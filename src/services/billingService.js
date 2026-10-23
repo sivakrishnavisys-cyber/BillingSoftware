@@ -191,7 +191,5 @@ export function completeCheckout(state, payload = {}) {
 
   next = applySaleDeductions(next, invoice);
   next.lastInvoice = invoice;
-  next.invoice = invoice;
-  next.state = next;
   return next;
 }
