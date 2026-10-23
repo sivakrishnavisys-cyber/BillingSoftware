@@ -8,9 +8,12 @@ import {
   Printer,
   Share2,
   Sparkles,
+  Volume2,
+  Wifi,
   X,
+  Zap,
 } from 'lucide-react';
-import { playPrinterFeedSound } from '../utils/audioUtils';
+import { playPaytmSuccessChime, playPrinterFeedSound } from '../utils/audioUtils';
 import { formatINR } from '../utils/currencyUtils';
 import { formatDateTime } from '../utils/dateUtils';
 import { exportInvoicePdf } from '../utils/pdfReceiptUtils';
@@ -27,11 +30,11 @@ export default function PrinterAnimationModal({
 }) {
   const [stage, setStage] = useState('idle'); // 'idle' | 'printing' | 'done'
   const [progress, setProgress] = useState(0);
-  const [statusMsg, setStatusMsg] = useState('Initializing printer...');
+  const [statusMsg, setStatusMsg] = useState('Paytm Soundbox: Payment Successful');
   const [popperTrigger, setPopperTrigger] = useState(0);
   const barcodeRef = useRef(null);
 
-  // Restart print simulation whenever modal opens
+  // Restart print simulation & Paytm chime whenever modal opens
   useEffect(() => {
     if (!open || !invoice) {
       setStage('idle');
@@ -41,8 +44,9 @@ export default function PrinterAnimationModal({
 
     setStage('printing');
     setProgress(0);
-    setStatusMsg('Connecting to POS thermal printer...');
+    setStatusMsg('Paytm Smart POS: Printing Receipt...');
     setPopperTrigger((k) => k + 1); // Celebration poppers burst on payment confirmation
+    playPaytmSuccessChime(); // Paytm soundbox chime
     playPrinterFeedSound();
 
     let currentProgress = 0;
@@ -51,15 +55,15 @@ export default function PrinterAnimationModal({
       setProgress((prev) => {
         const next = Math.min(100, prev + 4);
         if (next < 30) {
-          setStatusMsg('Connecting to POS thermal printer...');
+          setStatusMsg('Paytm Smart POS: Connecting to thermal head...');
         } else if (next < 70) {
-          setStatusMsg(`Printing bill #${invoice.invoiceNumber}...`);
+          setStatusMsg(`Printing Tax Bill #${invoice.invoiceNumber}...`);
         } else if (next < 95) {
-          setStatusMsg('Cutting thermal paper...');
+          setStatusMsg('Thermal Paper Cut Complete ✓');
         } else {
-          setStatusMsg('Print Complete! ✓ Ready for customer');
+          setStatusMsg('Print Complete! Ready for Customer ✓');
           setStage('done');
-          setPopperTrigger((k) => k + 1); // Second celebration burst when paper is cut
+          setPopperTrigger((k) => k + 1); // Celebration burst when paper finishes
           clearInterval(interval);
         }
         return next;
@@ -141,64 +145,64 @@ export default function PrinterAnimationModal({
       className="modal-backdrop printer-fullscreen-modal"
       role="dialog"
       aria-modal="true"
-      aria-label="Thermal Receipt Printing View"
+      aria-label="Paytm Machine Receipt Printing View"
     >
-      {/* Background Celebration Poppers & Confetti Animation */}
+      {/* Background Celebration Poppers & Confetti Animation on Transparent Screen */}
       <CelebrationPoppers triggerKey={popperTrigger} />
 
-      {/* Full-Width Top Header Bar */}
+      {/* Top Header Bar (Paytm Iconic Navy & Cyan Theme) */}
       <header className="printer-fullscreen-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div
             style={{
-              width: 40,
-              height: 40,
+              width: 38,
+              height: 38,
               borderRadius: 10,
-              background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.3), rgba(14, 165, 233, 0.15))',
-              border: '1px solid rgba(56, 189, 248, 0.4)',
+              background: 'linear-gradient(135deg, #00b9f5 0%, #002970 100%)',
+              border: '1px solid rgba(0, 185, 245, 0.4)',
               display: 'grid',
               placeItems: 'center',
-              color: '#38bdf8',
-              boxShadow: '0 0 16px rgba(56, 189, 248, 0.25)',
+              color: '#ffffff',
+              boxShadow: '0 0 16px rgba(0, 185, 245, 0.35)',
             }}
           >
-            <Printer size={22} />
+            <Zap size={20} />
           </div>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-              <h2 style={{ margin: 0, fontSize: '1.1rem', color: '#fff', fontWeight: 800, letterSpacing: '-0.01em' }}>
-                Receipt Printing
+              <h2 style={{ margin: 0, fontSize: '1.05rem', color: '#fff', fontWeight: 800, letterSpacing: '-0.01em' }}>
+                Paytm Smart POS
               </h2>
               <span
                 style={{
-                  background: 'rgba(56, 189, 248, 0.15)',
-                  color: '#38bdf8',
+                  background: 'rgba(0, 185, 245, 0.2)',
+                  color: '#00b9f5',
                   fontSize: '0.68rem',
                   fontWeight: 800,
                   padding: '2px 8px',
                   borderRadius: 6,
                   letterSpacing: '0.05em',
-                  border: '1px solid rgba(56, 189, 248, 0.3)',
+                  border: '1px solid rgba(0, 185, 245, 0.4)',
                 }}
               >
-                POS THERMAL 80MM
+                EDC 80MM PRINTER
               </span>
               <span
                 style={{
-                  background: 'rgba(74, 222, 128, 0.15)',
-                  color: '#4ade80',
+                  background: 'rgba(0, 186, 124, 0.2)',
+                  color: '#00ba7c',
                   fontSize: '0.68rem',
                   fontWeight: 800,
                   padding: '2px 8px',
                   borderRadius: 6,
-                  border: '1px solid rgba(74, 222, 128, 0.3)',
+                  border: '1px solid rgba(0, 186, 124, 0.4)',
                 }}
               >
-                PAID ✓
+                PAYMENT SUCCESSFUL ✓
               </span>
             </div>
-            <div style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: 2 }}>
-              Invoice #{invoice.invoiceNumber} · {shop?.name || 'Retail Supermarket'} · {formatDateTime(invoice.createdAt)}
+            <div style={{ fontSize: '0.78rem', color: '#cbd5e1', marginTop: 2 }}>
+              Invoice #{invoice.invoiceNumber} · {shop?.name || 'Store'} · {formatDateTime(invoice.createdAt)}
             </div>
           </div>
         </div>
@@ -208,8 +212,8 @@ export default function PrinterAnimationModal({
             type="button"
             onClick={() => setPopperTrigger((k) => k + 1)}
             style={{
-              background: 'rgba(245, 158, 11, 0.18)',
-              border: '1px solid rgba(245, 158, 11, 0.35)',
+              background: 'rgba(245, 158, 11, 0.2)',
+              border: '1px solid rgba(245, 158, 11, 0.4)',
               color: '#fbbf24',
               borderRadius: 8,
               padding: '6px 12px',
@@ -221,17 +225,17 @@ export default function PrinterAnimationModal({
               fontWeight: 700,
               transition: 'all 0.15s ease',
             }}
-            title="Pop More Celebration Confetti"
+            title="Burst Celebration Poppers"
           >
-            <PartyPopper size={16} /> Pop More 🎉
+            <PartyPopper size={16} /> Pop Confetti 🎉
           </button>
 
           <button
             type="button"
             onClick={onClose}
             style={{
-              background: 'rgba(255, 255, 255, 0.1)',
-              border: '1px solid rgba(255, 255, 255, 0.15)',
+              background: 'rgba(255, 255, 255, 0.12)',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
               color: '#cbd5e1',
               borderRadius: 8,
               width: 38,
@@ -249,305 +253,384 @@ export default function PrinterAnimationModal({
         </div>
       </header>
 
-      {/* Full-Width Progress & Status Banner */}
-      <div
-        style={{
-          width: '100%',
-          boxSizing: 'border-box',
-          background: '#0b1120',
-          padding: '8px 24px',
-          borderBottom: '1px solid #1e293b',
-          flexShrink: 0,
-          zIndex: 8,
-        }}
-      >
-        <div style={{ maxWidth: 860, margin: '0 auto' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+      {/* Middle Interactive Paytm Machine Viewport (Transparent Background) */}
+      <div className="printer-fullscreen-viewport">
+        {/* The Physical Paytm Smart POS EDC Terminal Device */}
+        <div
+          style={{
+            width: 'min(420px, 94vw)',
+            background: 'linear-gradient(180deg, #071739 0%, #001f54 60%, #001233 100%)',
+            borderRadius: 24,
+            border: '2px solid rgba(0, 185, 245, 0.45)',
+            boxShadow: '0 24px 60px rgba(0, 0, 0, 0.55), 0 0 35px rgba(0, 185, 245, 0.25)',
+            display: 'flex',
+            flexDirection: 'column',
+            position: 'relative',
+            zIndex: 10,
+            overflow: 'hidden',
+          }}
+        >
+          {/* Top Thermal Receipt Slot & Status Bar of Device */}
+          <div
+            style={{
+              background: '#040d21',
+              padding: '10px 16px 8px',
+              borderBottom: '1px solid #1a2f5a',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 8,
+            }}
+          >
+            {/* Status indicators */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span
+                  style={{
+                    width: 9,
+                    height: 9,
+                    borderRadius: '50%',
+                    background: '#00ba7c',
+                    boxShadow: '0 0 10px #00ba7c',
+                    display: 'inline-block',
+                  }}
+                  title="Power On"
+                />
+                <span
+                  style={{
+                    width: 9,
+                    height: 9,
+                    borderRadius: '50%',
+                    background: stage === 'printing' ? '#00b9f5' : '#64748b',
+                    boxShadow: stage === 'printing' ? '0 0 10px #00b9f5' : 'none',
+                    animation: stage === 'printing' ? 'pulse 0.6s infinite alternate' : 'none',
+                    display: 'inline-block',
+                  }}
+                  title="Printer Feed"
+                />
+                <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#94a3b8', letterSpacing: '0.06em' }}>
+                  ONLINE 4G
+                </span>
+              </div>
+
+              <div
+                style={{
+                  fontSize: '0.66rem',
+                  fontWeight: 800,
+                  color: '#00b9f5',
+                  background: 'rgba(0, 185, 245, 0.12)',
+                  padding: '2px 8px',
+                  borderRadius: 4,
+                  letterSpacing: '0.08em',
+                  border: '1px solid rgba(0, 185, 245, 0.3)',
+                }}
+              >
+                PAYTM THERMAL POS 80MM
+              </div>
+            </div>
+
+            {/* Paper Output Slot Mouth */}
+            <div
+              style={{
+                width: '100%',
+                height: 12,
+                background: '#010511',
+                borderRadius: 4,
+                boxShadow: 'inset 0 3px 6px rgba(0,0,0,0.95)',
+                position: 'relative',
+                overflow: 'hidden',
+                border: '1px solid #002970',
+              }}
+            >
+              <div
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  background: 'linear-gradient(180deg, rgba(0,0,0,0.9) 0%, transparent 100%)',
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Animated Thermal Receipt Paper Rolling Out from Top Slot */}
+          <div
+            style={{
+              padding: '6px 14px 10px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              background: '#040d21',
+              borderBottom: '2px solid #002970',
+            }}
+          >
+            <div
+              style={{
+                width: 'min(340px, 92%)',
+                maxHeight: 'min(240px, 32vh)',
+                height: `${Math.max(45, (progress / 100) * 230)}px`,
+                transition: 'height 0.12s linear',
+                background: '#ffffff',
+                boxShadow: '0 12px 30px rgba(0,0,0,0.4)',
+                borderRadius: '0 0 6px 6px',
+                overflowY: 'auto',
+                padding: '12px 14px 18px',
+                fontFamily: '"Courier New", Courier, monospace',
+                fontSize: 11,
+                lineHeight: 1.32,
+                color: '#0f172a',
+                position: 'relative',
+                borderLeft: '1px solid #cbd5e1',
+                borderRight: '1px solid #cbd5e1',
+              }}
+            >
+              {/* Serrated Bottom Edge */}
+              <div
+                style={{
+                  position: 'absolute',
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  height: 6,
+                  background: 'radial-gradient(circle, transparent, transparent 50%, #e2e8f0 50%, #e2e8f0 100%)',
+                  backgroundSize: '8px 8px',
+                }}
+              />
+
+              {/* Receipt Header */}
+              <div style={{ textAlign: 'center', borderBottom: '1px dashed #94a3b8', paddingBottom: 5, marginBottom: 5 }}>
+                <div style={{ fontWeight: 800, fontSize: 13, textTransform: 'uppercase', color: '#002970' }}>
+                  {shop?.name || 'Retail Supermarket'}
+                </div>
+                <div style={{ fontSize: 9.5, color: '#64748b' }}>{shop?.address}</div>
+                <div style={{ fontSize: 9.5, color: '#64748b' }}>Ph: {shop?.phone}</div>
+                {shop?.gstin && <div style={{ fontSize: 9, color: '#64748b' }}>GSTIN: {shop.gstin}</div>}
+              </div>
+
+              {/* Receipt Meta */}
+              <div style={{ fontSize: 9.5, borderBottom: '1px dashed #94a3b8', paddingBottom: 4, marginBottom: 5 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span>Bill: <strong>{invoice.invoiceNumber || 'INV-TEMP'}</strong></span>
+                  <span>{new Date(invoice.createdAt || Date.now()).toLocaleDateString('en-IN')}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span>Cust: {invoice.customerName || 'Walk-in'}</span>
+                  <span>{paymentLabel(invoice.paymentMethod || 'cash').toUpperCase()}</span>
+                </div>
+              </div>
+
+              {/* Items Table */}
+              <div style={{ marginBottom: 5 }}>
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: '2fr 1fr 1fr',
+                    fontWeight: 700,
+                    borderBottom: '1px dashed #94a3b8',
+                    paddingBottom: 2,
+                    fontSize: 9.5,
+                  }}
+                >
+                  <span>Item</span>
+                  <span style={{ textAlign: 'center' }}>Qty</span>
+                  <span style={{ textAlign: 'right' }}>Total</span>
+                </div>
+
+                {invoice.items?.map((it, idx) => (
+                  <div
+                    key={idx}
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: '2fr 1fr 1fr',
+                      padding: '2px 0',
+                      fontSize: 9.5,
+                    }}
+                  >
+                    <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {it.name}
+                    </span>
+                    <span style={{ textAlign: 'center' }}>{it.qty}</span>
+                    <span style={{ textAlign: 'right', fontWeight: 600 }}>{formatINR(it.lineTotalPaise)}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Receipt Totals */}
+              <div
+                style={{
+                  borderTop: '1px dashed #94a3b8',
+                  paddingTop: 4,
+                  marginBottom: 5,
+                  fontSize: 9.5,
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span>Subtotal</span>
+                  <span>{formatINR(invoice.subtotalPaise)}</span>
+                </div>
+
+                {invoice.discountPaise > 0 && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', color: '#16a34a' }}>
+                    <span>Discount</span>
+                    <span>-{formatINR(invoice.discountPaise)}</span>
+                  </div>
+                )}
+
+                {invoice.taxPaise > 0 && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span>GST Tax</span>
+                    <span>{formatINR(invoice.taxPaise)}</span>
+                  </div>
+                )}
+
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    fontWeight: 800,
+                    fontSize: 11.5,
+                    borderTop: '1px dashed #000',
+                    marginTop: 2,
+                    paddingTop: 2,
+                  }}
+                >
+                  <span>GRAND TOTAL</span>
+                  <span>{formatINR(invoice.grandTotalPaise)}</span>
+                </div>
+              </div>
+
+              {/* Barcode Graphic */}
+              <div style={{ textAlign: 'center', marginTop: 4, marginBottom: 2 }}>
+                <svg ref={barcodeRef} style={{ maxWidth: '100%' }} />
+              </div>
+
+              <div style={{ textAlign: 'center', fontSize: 8.5, color: '#64748b' }}>
+                *** Powered by Fast POS · Thank You! ***
+              </div>
+            </div>
+          </div>
+
+          {/* Device Touchscreen Display (Paytm Soundbox + Success UI) */}
+          <div
+            style={{
+              padding: '16px 18px',
+              background: 'linear-gradient(180deg, #001f54 0%, #001233 100%)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              textAlign: 'center',
+              position: 'relative',
+            }}
+          >
+            {/* Device Android Status Bar */}
+            <div
+              style={{
+                width: '100%',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                color: '#94a3b8',
+                fontSize: '0.68rem',
+                fontWeight: 600,
+                marginBottom: 12,
+                borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+                paddingBottom: 6,
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Wifi size={12} color="#00b9f5" />
+                <span>Paytm 4G LTE</span>
+              </div>
+              <div>
+                <span>{new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span>
+              </div>
+            </div>
+
+            {/* Glowing Paytm Success Circle */}
+            <div
+              style={{
+                width: 64,
+                height: 64,
+                borderRadius: '50%',
+                background: 'linear-gradient(135deg, #00ba7c 0%, #00875a 100%)',
+                boxShadow: '0 0 25px rgba(0, 186, 124, 0.55)',
+                display: 'grid',
+                placeItems: 'center',
+                color: '#ffffff',
+                marginBottom: 10,
+              }}
+            >
+              <CheckCircle2 size={38} color="#ffffff" strokeWidth={2.5} />
+            </div>
+
             <span
               style={{
                 fontSize: '0.82rem',
-                fontWeight: 700,
-                color: stage === 'done' ? '#4ade80' : '#38bdf8',
-                display: 'flex',
+                fontWeight: 800,
+                color: '#00ba7c',
+                letterSpacing: '0.08em',
+                marginBottom: 2,
+              }}
+            >
+              PAYMENT RECEIVED
+            </span>
+
+            {/* Giant Paytm Amount */}
+            <h1
+              style={{
+                margin: '2px 0 8px',
+                fontSize: '2.1rem',
+                fontWeight: 900,
+                color: '#ffffff',
+                letterSpacing: '-0.02em',
+                textShadow: '0 2px 10px rgba(0,0,0,0.5)',
+              }}
+            >
+              {formatINR(invoice.grandTotalPaise)}
+            </h1>
+
+            {/* Paytm Soundbox Voice Badge */}
+            <div
+              style={{
+                background: 'rgba(0, 185, 245, 0.14)',
+                border: '1px solid rgba(0, 185, 245, 0.35)',
+                borderRadius: 20,
+                padding: '4px 14px',
+                display: 'inline-flex',
                 alignItems: 'center',
                 gap: 6,
-              }}
-            >
-              {stage === 'done' ? <CheckCircle2 size={16} color="#4ade80" /> : <Sparkles size={16} color="#38bdf8" />}
-              {statusMsg}
-            </span>
-            <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#94a3b8' }}>
-              {progress}%
-            </span>
-          </div>
-
-          <div
-            style={{
-              height: 6,
-              background: '#1e293b',
-              borderRadius: 999,
-              overflow: 'hidden',
-              position: 'relative',
-            }}
-          >
-            <div
-              style={{
-                height: '100%',
-                width: `${progress}%`,
-                background:
-                  stage === 'done'
-                    ? 'linear-gradient(90deg, #22c55e, #4ade80)'
-                    : 'linear-gradient(90deg, #0284c7, #38bdf8)',
-                transition: 'width 0.1s ease',
-                borderRadius: 999,
-                boxShadow: stage === 'done' ? '0 0 12px rgba(74, 222, 128, 0.7)' : '0 0 12px rgba(56, 189, 248, 0.7)',
-              }}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Middle Interactive Thermal Printer Viewport */}
-      <div className="printer-fullscreen-viewport">
-        {/* Physical Printer Top Body */}
-        <div
-          style={{
-            width: 'min(380px, 94vw)',
-            height: 72,
-            background: 'linear-gradient(180deg, #1e293b 0%, #0f172a 100%)',
-            borderRadius: '16px 16px 6px 6px',
-            boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
-            position: 'relative',
-            zIndex: 10,
-            padding: '10px 16px',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-            border: '1px solid #334155',
-            flexShrink: 0,
-          }}
-        >
-          {/* Printer LEDs & Branding */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span
-                style={{
-                  width: 8,
-                  height: 8,
-                  borderRadius: '50%',
-                  background: '#22c55e',
-                  boxShadow: '0 0 10px #22c55e',
-                  display: 'inline-block',
-                }}
-                title="Power On"
-              />
-              <span
-                style={{
-                  width: 8,
-                  height: 8,
-                  borderRadius: '50%',
-                  background: stage === 'printing' ? '#38bdf8' : '#64748b',
-                  boxShadow: stage === 'printing' ? '0 0 10px #38bdf8' : 'none',
-                  animation: stage === 'printing' ? 'pulse 0.6s infinite alternate' : 'none',
-                  display: 'inline-block',
-                }}
-                title="Paper Feed"
-              />
-              <span style={{ fontSize: '0.68rem', fontWeight: 700, color: '#94a3b8', letterSpacing: '0.05em' }}>
-                ONLINE
-              </span>
-            </div>
-
-            <div
-              style={{
-                fontSize: '0.65rem',
-                fontWeight: 800,
-                color: '#cbd5e1',
-                background: 'rgba(255,255,255,0.08)',
-                padding: '2px 8px',
-                borderRadius: 4,
-                letterSpacing: '0.08em',
-              }}
-            >
-              POS THERMAL 80MM
-            </div>
-          </div>
-
-          {/* Paper Output Slot (Mouth) */}
-          <div
-            style={{
-              width: '100%',
-              height: 14,
-              background: '#020617',
-              borderRadius: 4,
-              boxShadow: 'inset 0 3px 6px rgba(0,0,0,0.9)',
-              position: 'relative',
-              overflow: 'hidden',
-              border: '1px solid #1e293b',
-            }}
-          >
-            <div
-              style={{
-                position: 'absolute',
-                inset: 0,
-                background: 'linear-gradient(180deg, rgba(0,0,0,0.85) 0%, transparent 100%)',
-              }}
-            />
-          </div>
-        </div>
-
-        {/* Animated Receipt Paper Rolling Out */}
-        <div
-          style={{
-            width: 'min(340px, 88vw)',
-            maxHeight: 'min(440px, 50vh)',
-            height: `${Math.max(45, (progress / 100) * 370)}px`,
-            transition: 'height 0.12s linear',
-            background: '#ffffff',
-            boxShadow: '0 16px 40px rgba(0,0,0,0.35)',
-            borderRadius: '0 0 6px 6px',
-            overflowY: 'auto',
-            padding: '14px 16px 20px',
-            fontFamily: '"Courier New", Courier, monospace',
-            fontSize: 11,
-            lineHeight: 1.35,
-            color: '#0f172a',
-            marginTop: -4,
-            zIndex: 5,
-            position: 'relative',
-            borderLeft: '1px solid #e2e8f0',
-            borderRight: '1px solid #e2e8f0',
-          }}
-        >
-          {/* Serrated Bottom Edge */}
-          <div
-            style={{
-              position: 'absolute',
-              bottom: 0,
-              left: 0,
-              right: 0,
-              height: 6,
-              background: 'radial-gradient(circle, transparent, transparent 50%, #f1f5f9 50%, #f1f5f9 100%)',
-              backgroundSize: '8px 8px',
-            }}
-          />
-
-          {/* Receipt Header */}
-          <div style={{ textAlign: 'center', borderBottom: '1px dashed #94a3b8', paddingBottom: 6, marginBottom: 6 }}>
-            <div style={{ fontWeight: 800, fontSize: 13, textTransform: 'uppercase' }}>
-              {shop?.name || 'Retail Supermarket'}
-            </div>
-            <div style={{ fontSize: 10, color: '#64748b' }}>{shop?.address}</div>
-            <div style={{ fontSize: 10, color: '#64748b' }}>Ph: {shop?.phone}</div>
-            {shop?.gstin && <div style={{ fontSize: 9, color: '#64748b' }}>GSTIN: {shop.gstin}</div>}
-          </div>
-
-          {/* Receipt Meta */}
-          <div style={{ fontSize: 10, borderBottom: '1px dashed #94a3b8', paddingBottom: 4, marginBottom: 6 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span>Bill: <strong>{invoice.invoiceNumber || 'INV-TEMP'}</strong></span>
-              <span>{new Date(invoice.createdAt || Date.now()).toLocaleDateString('en-IN')}</span>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span>Cust: {invoice.customerName || 'Walk-in'}</span>
-              <span>{paymentLabel(invoice.paymentMethod || 'cash').toUpperCase()}</span>
-            </div>
-          </div>
-
-          {/* Items Table */}
-          <div style={{ marginBottom: 6 }}>
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: '2fr 1fr 1fr',
+                color: '#00b9f5',
+                fontSize: '0.74rem',
                 fontWeight: 700,
-                borderBottom: '1px dashed #94a3b8',
-                paddingBottom: 2,
-                fontSize: 10,
+                marginBottom: 10,
               }}
             >
-              <span>Item</span>
-              <span style={{ textAlign: 'center' }}>Qty</span>
-              <span style={{ textAlign: 'right' }}>Total</span>
+              <Volume2 size={14} />
+              <span>Paytm Soundbox: "{formatINR(invoice.grandTotalPaise)} Received"</span>
             </div>
 
-            {invoice.items?.map((it, idx) => (
-              <div
-                key={idx}
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: '2fr 1fr 1fr',
-                  padding: '2px 0',
-                  fontSize: 10,
-                }}
-              >
-                <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {it.name}
-                </span>
-                <span style={{ textAlign: 'center' }}>{it.qty}</span>
-                <span style={{ textAlign: 'right', fontWeight: 600 }}>{formatINR(it.lineTotalPaise)}</span>
-              </div>
-            ))}
-          </div>
-
-          {/* Receipt Totals */}
-          <div
-            style={{
-              borderTop: '1px dashed #94a3b8',
-              paddingTop: 4,
-              marginBottom: 6,
-              fontSize: 10,
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span>Subtotal</span>
-              <span>{formatINR(invoice.subtotalPaise)}</span>
-            </div>
-
-            {invoice.discountPaise > 0 && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#16a34a' }}>
-                <span>Discount</span>
-                <span>-{formatINR(invoice.discountPaise)}</span>
-              </div>
-            )}
-
-            {invoice.taxPaise > 0 && (
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span>GST Tax</span>
-                <span>{formatINR(invoice.taxPaise)}</span>
-              </div>
-            )}
-
+            {/* Transaction Metadata Footer on Screen */}
             <div
               style={{
+                fontSize: '0.72rem',
+                color: '#94a3b8',
                 display: 'flex',
-                justifyContent: 'space-between',
-                fontWeight: 800,
-                fontSize: 12,
-                borderTop: '1px dashed #000',
-                marginTop: 2,
-                paddingTop: 2,
+                gap: 8,
+                flexWrap: 'wrap',
+                justifyContent: 'center',
               }}
             >
-              <span>GRAND TOTAL</span>
-              <span>{formatINR(invoice.grandTotalPaise)}</span>
+              <span>Txn: #{invoice.invoiceNumber}</span>
+              <span>·</span>
+              <span>{paymentLabel(invoice.paymentMethod).toUpperCase()}</span>
+              <span>·</span>
+              <span style={{ color: '#00ba7c', fontWeight: 700 }}>APPROVED ✓</span>
             </div>
-          </div>
-
-          {/* Barcode Graphic */}
-          <div style={{ textAlign: 'center', marginTop: 4, marginBottom: 2 }}>
-            <svg ref={barcodeRef} style={{ maxWidth: '100%' }} />
-          </div>
-
-          <div style={{ textAlign: 'center', fontSize: 9, color: '#64748b' }}>
-            *** Thank You! Visit Again ***
           </div>
         </div>
       </div>
 
-      {/* Full-Width Sticky Bottom Action Dock */}
+      {/* Full-Width Sticky Bottom Action Dock (Paytm POS Style) */}
       <footer className="printer-fullscreen-footer">
-        <div style={{ maxWidth: 860, margin: '0 auto', width: '100%', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{ maxWidth: 880, margin: '0 auto', width: '100%', display: 'flex', flexDirection: 'column', gap: 10 }}>
           {/* Main Action Buttons Grid (Horizontal on Desktop, 2x2 on Mobile) */}
           <div className="printer-buttons-grid">
             <button
@@ -559,15 +642,15 @@ export default function PrinterAnimationModal({
                 fontSize: '0.92rem',
                 fontWeight: 700,
                 justifyContent: 'center',
-                background: 'linear-gradient(135deg, #0284c7 0%, #2563eb 100%)',
+                background: 'linear-gradient(135deg, #00b9f5 0%, #002970 100%)',
                 color: '#ffffff',
-                border: 'none',
-                borderRadius: 10,
-                boxShadow: '0 4px 14px rgba(37, 99, 235, 0.4)',
+                border: '1px solid rgba(0, 185, 245, 0.5)',
+                borderRadius: 12,
+                boxShadow: '0 4px 16px rgba(0, 185, 245, 0.35)',
                 cursor: 'pointer',
               }}
             >
-              <Printer size={18} /> Print Receipt Now
+              <Printer size={18} /> Print Customer Receipt
             </button>
 
             <button
@@ -580,9 +663,9 @@ export default function PrinterAnimationModal({
                 fontWeight: 600,
                 justifyContent: 'center',
                 background: 'rgba(255, 255, 255, 0.08)',
-                border: '1px solid rgba(255, 255, 255, 0.2)',
+                border: '1px solid rgba(0, 185, 245, 0.35)',
                 color: '#f8fafc',
-                borderRadius: 10,
+                borderRadius: 12,
                 cursor: 'pointer',
               }}
             >
@@ -600,10 +683,10 @@ export default function PrinterAnimationModal({
                 fontWeight: 700,
                 justifyContent: 'center',
                 color: '#ffffff',
-                background: 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)',
+                background: 'linear-gradient(135deg, #25d366 0%, #128c7e 100%)',
                 border: 'none',
-                borderRadius: 10,
-                boxShadow: '0 4px 14px rgba(22, 163, 74, 0.35)',
+                borderRadius: 12,
+                boxShadow: '0 4px 14px rgba(37, 211, 102, 0.3)',
                 textDecoration: 'none',
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -622,20 +705,20 @@ export default function PrinterAnimationModal({
                 fontSize: '0.94rem',
                 fontWeight: 800,
                 justifyContent: 'center',
-                background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
+                background: 'linear-gradient(135deg, #00ba7c 0%, #00875a 100%)',
                 color: '#ffffff',
                 border: 'none',
-                borderRadius: 10,
-                boxShadow: '0 4px 16px rgba(16, 185, 129, 0.45)',
+                borderRadius: 12,
+                boxShadow: '0 4px 16px rgba(0, 186, 124, 0.45)',
                 cursor: 'pointer',
               }}
             >
-              <Plus size={19} /> Start New Bill
+              <Plus size={19} /> Next Customer / New Bill
             </button>
           </div>
 
-          {/* Bottom Secondary Links */}
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 16, marginTop: 2 }}>
+          {/* Dismiss return link */}
+          <div style={{ textAlign: 'center', marginTop: 2 }}>
             <button
               type="button"
               onClick={onClose}

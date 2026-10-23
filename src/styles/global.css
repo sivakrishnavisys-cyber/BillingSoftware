@@ -1493,7 +1493,7 @@ body:has(.printer-fullscreen-modal) .pos-mobile-floating-bar {
   transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s ease;
 }
 
-/* Full-Screen Thermal Receipt Printing View */
+/* Full-Screen Thermal Receipt Printing View (Paytm POS Machine Style) */
 .printer-fullscreen-modal {
   position: fixed !important;
   inset: 0 !important;
@@ -1505,7 +1505,9 @@ body:has(.printer-fullscreen-modal) .pos-mobile-floating-bar {
   margin: 0 !important;
   padding: 0 !important;
   border-radius: 0 !important;
-  background: #090d16 !important;
+  background: rgba(10, 22, 44, 0.76) !important;
+  backdrop-filter: blur(18px) !important;
+  -webkit-backdrop-filter: blur(18px) !important;
   z-index: 500 !important;
   display: flex !important;
   flex-direction: column !important;
@@ -1520,15 +1522,17 @@ body:has(.printer-fullscreen-modal) .pos-mobile-floating-bar {
 .printer-fullscreen-header {
   width: 100% !important;
   box-sizing: border-box !important;
-  background: #0f172a !important;
+  background: rgba(0, 41, 112, 0.92) !important;
   color: #fff !important;
   padding: 12px 20px !important;
   display: flex !important;
   justify-content: space-between !important;
   align-items: center !important;
-  border-bottom: 1px solid #1e293b !important;
+  border-bottom: 1px solid rgba(0, 185, 245, 0.3) !important;
   flex-shrink: 0 !important;
   z-index: 10 !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
 }
 
 .printer-fullscreen-viewport {
@@ -1541,7 +1545,7 @@ body:has(.printer-fullscreen-modal) .pos-mobile-floating-bar {
   flex-direction: column !important;
   align-items: center !important;
   padding: 16px 14px 22px !important;
-  background: radial-gradient(circle at 50% 25%, #1e293b 0%, #090d16 85%) !important;
+  background: transparent !important;
   position: relative !important;
   z-index: 5 !important;
 }
@@ -1549,10 +1553,10 @@ body:has(.printer-fullscreen-modal) .pos-mobile-floating-bar {
 .printer-fullscreen-footer {
   width: 100% !important;
   box-sizing: border-box !important;
-  background: rgba(15, 23, 42, 0.96) !important;
+  background: rgba(4, 18, 48, 0.94) !important;
   backdrop-filter: blur(16px) !important;
   -webkit-backdrop-filter: blur(16px) !important;
-  border-top: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-top: 1px solid rgba(0, 185, 245, 0.25) !important;
   padding: 14px 20px calc(14px + env(safe-area-inset-bottom, 0px)) 20px !important;
   position: sticky !important;
   bottom: 0 !important;
