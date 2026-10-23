@@ -115,17 +115,20 @@ export default function PrinterAnimationModal({
   };
 
   return (
-    <div className="modal-backdrop" onClick={onClose} style={{ zIndex: 110, padding: 12 }}>
+    <div className="modal-backdrop" onClick={onClose} style={{ zIndex: 400, padding: 12 }}>
       <div
         className="modal-card"
         onClick={(e) => e.stopPropagation()}
         style={{
           maxWidth: 480,
           width: '100%',
+          maxHeight: 'min(92vh, 92dvh)',
           padding: 0,
-          overflow: 'hidden',
+          overflowY: 'auto',
           borderRadius: 16,
           boxShadow: '0 20px 45px rgba(0, 0, 0, 0.35)',
+          display: 'flex',
+          flexDirection: 'column',
         }}
       >
         {/* Top Header Bar */}
@@ -208,13 +211,16 @@ export default function PrinterAnimationModal({
         <div
           style={{
             background: '#f1f5f9',
-            padding: '20px 14px 10px',
+            padding: '14px 12px 10px',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             position: 'relative',
-            minHeight: 330,
+            height: 230,
+            maxHeight: '34vh',
+            minHeight: 180,
             overflow: 'hidden',
+            flexShrink: 0,
           }}
         >
           {/* Physical Printer Top Body */}
@@ -306,9 +312,9 @@ export default function PrinterAnimationModal({
           {/* Animated Receipt Paper Rolling Out */}
           <div
             style={{
-              width: 'min(300px, 84%)',
-              maxHeight: 250,
-              height: `${Math.max(40, (progress / 100) * 240)}px`,
+              width: 'min(300px, 86%)',
+              maxHeight: 165,
+              height: `${Math.max(30, (progress / 100) * 160)}px`,
               transition: 'height 0.12s linear',
               background: '#ffffff',
               boxShadow: '0 10px 25px rgba(0,0,0,0.12)',
@@ -456,53 +462,57 @@ export default function PrinterAnimationModal({
         <div
           style={{
             background: '#ffffff',
-            padding: '12px 16px',
+            padding: '12px 14px',
             borderTop: '1px solid #e2e8f0',
             display: 'flex',
             flexDirection: 'column',
-            gap: 10,
+            gap: 8,
+            position: 'sticky',
+            bottom: 0,
+            zIndex: 25,
+            marginTop: 'auto',
           }}
         >
           {/* Main Action Buttons */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 8 }}>
             <button
               type="button"
               className="btn btn-primary"
               onClick={handlePrintSystemDialog}
-              style={{ padding: '9px 12px', fontSize: '0.84rem' }}
+              style={{ padding: '9px 10px', fontSize: '0.82rem', justifyContent: 'center' }}
             >
-              <Printer size={16} /> Print Receipt Now
+              <Printer size={16} /> Print Receipt
             </button>
 
             <button
               type="button"
               className="btn btn-ghost"
               onClick={downloadPdf}
-              style={{ padding: '9px 12px', fontSize: '0.84rem' }}
+              style={{ padding: '9px 10px', fontSize: '0.82rem', justifyContent: 'center' }}
             >
               <Download size={16} /> Download PDF
             </button>
           </div>
 
           {/* Secondary Utilities Strip */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 6 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 8 }}>
             <a
               href={getWhatsAppShareUrl()}
               target="_blank"
               rel="noreferrer"
-              className="btn btn-ghost btn-sm"
-              style={{ color: '#16a34a', borderColor: '#bbf7d0', background: '#f0fdf4' }}
+              className="btn btn-ghost"
+              style={{ color: '#16a34a', borderColor: '#bbf7d0', background: '#f0fdf4', padding: '9px 10px', fontSize: '0.82rem', justifyContent: 'center' }}
             >
-              <Share2 size={13} /> Send on WhatsApp
+              <Share2 size={14} /> Send WhatsApp
             </a>
 
             <button
               type="button"
-              className="btn btn-success btn-sm"
+              className="btn btn-success"
               onClick={onStartNewBill || onClose}
-              style={{ fontWeight: 700 }}
+              style={{ fontWeight: 700, padding: '9px 10px', fontSize: '0.82rem', justifyContent: 'center' }}
             >
-              <Plus size={14} /> Start New Bill
+              <Plus size={15} /> Start New Bill
             </button>
           </div>
         </div>

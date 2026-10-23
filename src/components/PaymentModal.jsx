@@ -245,7 +245,7 @@ export default function PaymentModal({
 
         {error ? <p className="alert alert-error" style={{ marginTop: 10 }}>{error}</p> : null}
 
-        <div className="modal-actions" style={{ marginTop: 14 }}>
+        <div className="modal-actions">
           <button type="button" className="btn btn-ghost" onClick={onCancel}>
             Cancel
           </button>

@@ -798,7 +798,7 @@ export default function Staff() {
                 </div>
               </div>
 
-              <div className="modal-actions" style={{ marginTop: 24, display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+              <div className="modal-actions" style={{ marginTop: 20 }}>
                 <button type="button" className="btn btn-ghost" onClick={() => setFormOpen(false)}>
                   Cancel
                 </button>
