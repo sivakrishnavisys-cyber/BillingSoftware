@@ -1506,7 +1506,7 @@ body:has(.printer-fullscreen-modal) .pos-mobile-floating-bar {
   margin: 0 !important;
   padding: 16px !important;
   border-radius: 0 !important;
-  background: rgba(10, 20, 38, 0.62) !important;
+  background: rgba(8, 16, 32, 0.65) !important;
   backdrop-filter: blur(14px) !important;
   -webkit-backdrop-filter: blur(14px) !important;
   z-index: 500 !important;
@@ -1519,28 +1519,65 @@ body:has(.printer-fullscreen-modal) .pos-mobile-floating-bar {
   border: none !important;
   cursor: pointer !important;
   user-select: none !important;
-  animation: modalFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: modalFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.printer-direct-bill-container {
+  perspective: 1200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: 380px;
 }
 
 .printer-direct-bill {
   transform-origin: top center;
-  transition: transform 0.42s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.42s ease, filter 0.42s ease;
+  transition: transform 0.42s cubic-bezier(0.18, 0.89, 0.32, 1.28), opacity 0.4s ease, filter 0.4s ease;
+  will-change: transform, opacity, filter;
 }
 
 .printer-direct-bill.tearing {
-  transform: translateY(140px) rotate(6deg) scale(0.92) !important;
-  opacity: 0 !important;
-  filter: blur(3px) !important;
-  pointer-events: none !important;
+  animation: receiptTearRip 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) forwards !important;
+}
+
+@keyframes receiptTearRip {
+  0% {
+    transform: translateY(0) rotate(0deg) scale(1);
+    opacity: 1;
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+  }
+  20% {
+    transform: translateY(8px) rotate(-2.5deg) scale(0.99);
+    clip-path: polygon(0 4px, 15% 1px, 35% 5px, 60% 0px, 85% 6px, 100% 2px, 100% 100%, 0 100%);
+  }
+  50% {
+    transform: translateY(45px) rotate(4deg) scale(0.96);
+    clip-path: polygon(0 6px, 18% 2px, 40% 7px, 65% 1px, 88% 8px, 100% 3px, 100% 100%, 0 100%);
+    opacity: 0.92;
+  }
+  100% {
+    transform: translateY(180px) rotate(9deg) scale(0.9);
+    opacity: 0;
+    filter: blur(4px);
+    clip-path: polygon(0 8px, 20% 3px, 45% 9px, 70% 2px, 90% 10px, 100% 4px, 100% 100%, 0 100%);
+  }
 }
 
 .tear-hint-pill {
   animation: tearPulse 1.8s ease-in-out infinite alternate;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+.tear-hint-pill:hover {
+  transform: scale(1.08) !important;
+  background: rgba(255, 255, 255, 0.25) !important;
 }
 
 @keyframes tearPulse {
-  0% { transform: scale(1); opacity: 0.85; }
-  100% { transform: scale(1.06); opacity: 1; }
+  0% { transform: scale(1); opacity: 0.88; }
+  100% { transform: scale(1.06); opacity: 1; box-shadow: 0 0 20px rgba(56, 189, 248, 0.4); }
 }
 
 @keyframes popperShake {

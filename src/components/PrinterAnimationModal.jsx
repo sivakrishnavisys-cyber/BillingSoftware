@@ -39,15 +39,15 @@ export default function PrinterAnimationModal({
 
     let currentProgress = 0;
     const interval = setInterval(() => {
-      currentProgress += 5;
+      currentProgress += 4;
       setProgress((prev) => {
-        const next = Math.min(100, prev + 5);
+        const next = Math.min(100, prev + 4);
         if (next >= 100) {
           clearInterval(interval);
         }
         return next;
       });
-    }, 40);
+    }, 35);
 
     return () => clearInterval(interval);
   }, [open, invoice]);
@@ -86,7 +86,7 @@ export default function PrinterAnimationModal({
   const handleTearAndClose = () => {
     if (isTearing) return;
     setIsTearing(true);
-    playPaperTearSound(); // Realistic crisp paper rip sound
+    playPaperTearSound(); // Realistic crisp paper bite and rip sound
 
     setTimeout(() => {
       if (onStartNewBill) {
@@ -94,7 +94,7 @@ export default function PrinterAnimationModal({
       } else if (onClose) {
         onClose();
       }
-    }, 380);
+    }, 420);
   };
 
   // Keyboard shortcut listener: Enter / Space / Escape tears bill
@@ -123,27 +123,17 @@ export default function PrinterAnimationModal({
       {/* Subtle Background Celebration Poppers & Confetti */}
       <CelebrationPoppers triggerKey={popperTrigger} />
 
-      {/* Centered Printer Device & Paper Rollout */}
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          position: 'relative',
-          zIndex: 10,
-          maxWidth: 380,
-          width: '100%',
-        }}
-      >
-        {/* Physical Thermal Printer Top Hardware Mouth */}
+      {/* 3D Perspective Container for Printer & Paper */}
+      <div className="printer-direct-bill-container">
+        {/* Physical Thermal Printer Top Hardware Housing */}
         <div
           style={{
             width: 'min(360px, 94vw)',
-            height: 64,
+            height: 68,
             background: 'linear-gradient(180deg, #1e293b 0%, #0f172a 100%)',
             borderRadius: '16px 16px 4px 4px',
-            boxShadow: '0 16px 40px rgba(0,0,0,0.6)',
-            padding: '10px 16px',
+            boxShadow: '0 20px 45px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,255,255,0.15)',
+            padding: '10px 16px 6px',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
@@ -199,18 +189,32 @@ export default function PrinterAnimationModal({
             </div>
           </div>
 
-          {/* Metal Cutter Blade Slot */}
+          {/* Metal Cutter Blade Slot with Steel Serrated Teeth */}
           <div
             style={{
               width: '100%',
-              height: 10,
+              height: 12,
               background: '#020617',
               borderRadius: 3,
               boxShadow: 'inset 0 3px 6px rgba(0,0,0,0.95)',
               position: 'relative',
-              borderBottom: '1px dashed #475569',
+              overflow: 'hidden',
             }}
-          />
+          >
+            {/* Stainless steel triangular serrated cutter blade */}
+            <svg
+              width="100%"
+              height="8"
+              viewBox="0 0 100 8"
+              preserveAspectRatio="none"
+              style={{ position: 'absolute', bottom: 0, left: 0, right: 0, display: 'block' }}
+            >
+              <polygon
+                points="0,0 2,7 4,0 6,7 8,0 10,7 12,0 14,7 16,0 18,7 20,0 22,7 24,0 26,7 28,0 30,7 32,0 34,7 36,0 38,7 40,0 42,7 44,0 46,7 48,0 50,7 52,0 54,7 56,0 58,7 60,0 62,7 64,0 66,7 68,0 70,7 72,0 74,7 76,0 78,7 80,0 82,7 84,0 86,7 88,0 90,7 92,0 94,7 96,0 98,7 100,0"
+                fill="#94a3b8"
+              />
+            </svg>
+          </div>
         </div>
 
         {/* The Animated Thermal Receipt Paper */}

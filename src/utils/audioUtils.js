@@ -165,19 +165,34 @@ export function playPartyPopperSound() {
 }
 
 /**
- * Plays an authentic crisp paper tearing / ripping sound.
+ * Plays an authentic crisp physical paper tearing & ripping sound.
  */
 export function playPaperTearSound() {
   try {
     const ctx = getAudioContext();
     if (!ctx) return;
     const now = ctx.currentTime;
-    const bufferSize = Math.floor(ctx.sampleRate * 0.22);
+
+    // 1. Initial teeth perforation "SNAP"
+    const snapOsc = ctx.createOscillator();
+    const snapGain = ctx.createGain();
+    snapOsc.type = 'triangle';
+    snapOsc.frequency.setValueAtTime(950, now);
+    snapOsc.frequency.exponentialRampToValueAtTime(150, now + 0.04);
+    snapGain.gain.setValueAtTime(0.35, now);
+    snapGain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+    snapOsc.connect(snapGain);
+    snapGain.connect(ctx.destination);
+    snapOsc.start(now);
+    snapOsc.stop(now + 0.055);
+
+    // 2. High-speed diagonal paper rip noise
+    const bufferSize = Math.floor(ctx.sampleRate * 0.28);
     const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
     const data = buffer.getChannelData(0);
 
     for (let i = 0; i < bufferSize; i++) {
-      data[i] = (Math.random() * 2 - 1) * (Math.random() > 0.2 ? 0.9 : 1.6);
+      data[i] = (Math.random() * 2 - 1) * (Math.random() > 0.15 ? 1.0 : 2.2);
     }
 
     const noise = ctx.createBufferSource();
@@ -185,22 +200,22 @@ export function playPaperTearSound() {
 
     const filter = ctx.createBiquadFilter();
     filter.type = 'bandpass';
-    filter.frequency.setValueAtTime(1400, now);
-    filter.frequency.exponentialRampToValueAtTime(3400, now + 0.07);
-    filter.frequency.exponentialRampToValueAtTime(1200, now + 0.2);
-    filter.Q.setValueAtTime(2.2, now);
+    filter.frequency.setValueAtTime(1200, now + 0.01);
+    filter.frequency.exponentialRampToValueAtTime(4200, now + 0.09);
+    filter.frequency.exponentialRampToValueAtTime(1500, now + 0.25);
+    filter.Q.setValueAtTime(3.2, now);
 
     const gain = ctx.createGain();
     gain.gain.setValueAtTime(0.001, now);
-    gain.gain.linearRampToValueAtTime(0.32, now + 0.03);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.21);
+    gain.gain.linearRampToValueAtTime(0.42, now + 0.04);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.26);
 
     noise.connect(filter);
     filter.connect(gain);
     gain.connect(ctx.destination);
 
     noise.start(now);
-    noise.stop(now + 0.22);
+    noise.stop(now + 0.27);
   } catch {
     // Fail-safe
   }
