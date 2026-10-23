@@ -1,0 +1,24 @@
+.label-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+}
+.label-pick {
+  border: 2px solid transparent;
+  background: #fff;
+  border-radius: 12px;
+  padding: 8px;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+}
+.label-pick.selected { border-color: var(--blue); }
+.barcode-label {
+  background: #fff;
+  text-align: center;
+  padding: 8px;
+  color: #111;
+}
+.label-name { font-weight: 700; font-size: 0.85rem; margin: 0; }
+.label-meta, .label-price { margin: 2px 0; font-size: 0.75rem; }
+.barcode-label svg { max-width: 100%; }
+.barcode-page .filter-bar .btn { flex: 0 0 auto; }

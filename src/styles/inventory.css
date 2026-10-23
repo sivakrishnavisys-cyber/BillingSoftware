@@ -1,0 +1,5 @@
+.inventory-page .alert-row {
+  max-height: 160px;
+  overflow: auto;
+}
+.settings-page .card { margin-bottom: 14px; }
