@@ -1,4 +1,4 @@
-import { STORAGE_KEY, createInitialState } from '../data/demoData';
+import { STORAGE_KEY, createInitialState, DEFAULT_BRANCHES, CATEGORIES } from '../data/demoData';
 import { buildSampleCustomers } from '../data/khataData';
 import {
   buildSampleSuppliers,
@@ -26,7 +26,15 @@ export function loadState() {
       labelSize: '50x30',
       receiptLayout: '80mm',
       demoBanner: true,
+      variantSelectionOnScan: true,
+      multiVariantBarcodes: true,
+      activeBranchId: 'BR-001',
+      activeCounterId: 'CNT-01',
     },
+    branches: DEFAULT_BRANCHES,
+    categories: [...CATEGORIES],
+    activeBranchId: 'BR-001',
+    activeCounterId: 'CNT-01',
     products: [],
     invoices: [],
     movements: [],
@@ -109,18 +117,50 @@ export function loadState() {
           expiryDate = '2027-08-31';
         }
       }
+      let variants = p.variants || [];
+      if ((!variants || variants.length === 0) && p.sku === 'SUG-001') {
+        variants = [
+          { id: 'VAR-SUG-500G', name: '500 g', sku: 'SUG-001-500G', barcode: '890100000003-500', purchasePricePaise: 2100, sellingPricePaise: 2500, quantity: 40, unit: 'pack' },
+          { id: 'VAR-SUG-1KG', name: '1 kg', sku: 'SUG-001-1KG', barcode: '890100000003', purchasePricePaise: 4000, sellingPricePaise: 4800, quantity: 80, unit: 'pack', isDefault: true },
+          { id: 'VAR-SUG-5KG', name: '5 kg', sku: 'SUG-001-5KG', barcode: '890100000003-5KG', purchasePricePaise: 19500, sellingPricePaise: 23000, quantity: 25, unit: 'bag' },
+        ];
+      }
       return {
         ...p,
+        variants,
         mfgDate,
         expiryDate,
         batchNo: p.batchNo || `BAT-${p.sku || 'GEN'}-26`,
       };
     });
 
+    const branches = parsed.branches && Array.isArray(parsed.branches) && parsed.branches.length > 0
+      ? parsed.branches
+      : DEFAULT_BRANCHES;
+    const categories = parsed.categories && Array.isArray(parsed.categories) && parsed.categories.length > 0
+      ? parsed.categories
+      : [...CATEGORIES];
+    const activeBranchId = parsed.activeBranchId || 'BR-001';
+    const activeCounterId = parsed.activeCounterId || 'CNT-01';
+
+    const invoices = (parsed.invoices || []).map((inv) => ({
+      ...inv,
+      branchId: inv.branchId || 'BR-001',
+      branchName: inv.branchName || 'Main Branch - Banjara Hills',
+      counterId: inv.counterId || 'CNT-01',
+      counterName: inv.counterName || 'Counter 1 (Express POS)',
+      cashierName: inv.cashierName || 'Pooja Verma',
+    }));
+
     return {
       ...defaults,
       ...parsed,
       products,
+      invoices,
+      branches,
+      categories,
+      activeBranchId,
+      activeCounterId,
       customers,
       khataTransactions: khataTransactions || [],
       suppliers,

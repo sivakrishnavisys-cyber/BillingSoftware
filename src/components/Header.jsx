@@ -4,6 +4,7 @@ import {
   AlertTriangle,
   Bell,
   BookOpen,
+  Building2,
   Check,
   CheckCircle2,
   Clock,
@@ -28,8 +29,27 @@ import { formatINR } from '../utils/currencyUtils';
 export default function Header({ shopName, onReset, onToggleSidebar }) {
   const { language, languages, changeLanguage, t } = useLanguage();
   const { currentUser, logout, isAdmin } = useAuth();
-  const { products, customers, invoices } = useStore();
+  const {
+    products,
+    customers,
+    invoices,
+    branches = [],
+    activeBranchId,
+    activeCounterId,
+    setActiveBranch,
+  } = useStore();
   const navigate = useNavigate();
+
+  const currentBranch = useMemo(
+    () => branches.find((b) => b.id === activeBranchId) || branches[0],
+    [branches, activeBranchId]
+  );
+  const currentCounter = useMemo(
+    () =>
+      currentBranch?.counters?.find((c) => c.id === activeCounterId) ||
+      currentBranch?.counters?.[0],
+    [currentBranch, activeCounterId]
+  );
 
   const [notifOpen, setNotifOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -190,6 +210,27 @@ export default function Header({ shopName, onReset, onToggleSidebar }) {
       </div>
 
       <div className="topbar-actions">
+        {/* Branch & Counter Selector Pill */}
+        {branches.length > 0 ? (
+          <div className="header-branch-pill hide-on-mobile" title="Current Active Branch & Counter">
+            <Building2 size={13} color="var(--blue)" />
+            <select
+              value={activeBranchId}
+              onChange={(e) => setActiveBranch(e.target.value)}
+              className="header-branch-select"
+            >
+              {branches.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.name}
+                </option>
+              ))}
+            </select>
+            <span className="header-counter-badge">
+              {currentCounter?.name ? currentCounter.name.replace(/ \(.*\)/, '') : 'Counter 1'}
+            </span>
+          </div>
+        ) : null}
+
         {/* Language Translations Dropdown Selector */}
         <div className="language-selector-wrap" title="Change Language / भाषा बदलें">
           <Globe size={14} color="var(--blue)" className="globe-icon" />

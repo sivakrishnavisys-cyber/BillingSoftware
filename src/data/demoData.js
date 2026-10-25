@@ -61,6 +61,10 @@ const RAW_PRODUCTS = [
   { name: 'Match Box (10 pcs)', category: 'Household', brand: 'SafeLite', sku: 'MCH-001', barcode: '890100000034', purchase: 8, selling: 12, qty: 60, min: 15, unit: 'pack' },
   { name: 'Garbage Bags (30 pcs)', category: 'Household', brand: 'CleanUp', sku: 'BAG-001', barcode: '890100000035', purchase: 62, selling: 85, qty: 9, min: 8, unit: 'roll' },
   { name: 'Aluminium Foil 10 m', category: 'Household', brand: 'WrapRight', sku: 'FOL-001', barcode: '890100000036', purchase: 52, selling: 75, qty: 13, min: 6, unit: 'roll' },
+  { name: 'Cadbury Dairy Milk Silk 60 g', category: 'Chocolates & Confectionery', brand: 'Cadbury', sku: 'CHK-001', barcode: '8901233020011', purchase: 65, selling: 85, qty: 65, min: 15, unit: 'bar' },
+  { name: 'Nestle KitKat 4-Finger 38 g', category: 'Chocolates & Confectionery', brand: 'Nestle', sku: 'CHK-002', barcode: '8901058852210', purchase: 22, selling: 30, qty: 80, min: 20, unit: 'pack' },
+  { name: 'Cadbury 5 Star 40 g', category: 'Chocolates & Confectionery', brand: 'Cadbury', sku: 'CHK-003', barcode: '8901233020059', purchase: 15, selling: 20, qty: 75, min: 20, unit: 'bar' },
+  { name: 'Parle Hide & Seek 120 g', category: 'Chocolates & Confectionery', brand: 'Parle', sku: 'CHK-004', barcode: '8901719101012', purchase: 28, selling: 40, qty: 50, min: 12, unit: 'pack' },
 ];
 
 export const CATEGORIES = [
@@ -71,6 +75,48 @@ export const CATEGORIES = [
   'Personal Care',
   'Household',
   'Bakery',
+  'Chocolates & Confectionery',
+  'Packaged Foods',
+];
+
+export const DEFAULT_BRANCHES = [
+  {
+    id: 'BR-001',
+    name: 'Main Branch - Banjara Hills',
+    code: 'BH-01',
+    address: 'Road No. 12, Banjara Hills, Hyderabad, Telangana 500034',
+    phone: '+91 98765 43210',
+    manager: 'Rajesh Sharma',
+    counters: [
+      { id: 'CNT-01', name: 'Counter 1 (Express POS)', cashier: 'Pooja Verma', isExpress: true },
+      { id: 'CNT-02', name: 'Counter 2 (Grocery & Dairy)', cashier: 'Suresh Raina', isExpress: false },
+      { id: 'CNT-03', name: 'Counter 3 (General POS)', cashier: 'Anita Roy', isExpress: false },
+    ],
+  },
+  {
+    id: 'BR-002',
+    name: 'Madhapur IT Corridor Branch',
+    code: 'MD-02',
+    address: 'Near Cyber Towers, Hitech City, Madhapur, Hyderabad 500081',
+    phone: '+91 98765 43211',
+    manager: 'Vikram Joshi',
+    counters: [
+      { id: 'CNT-04', name: 'Counter 1 (Express POS)', cashier: 'Kavita Nair', isExpress: true },
+      { id: 'CNT-05', name: 'Counter 2 (Beverages & Snacks)', cashier: 'Ramesh Patel', isExpress: false },
+    ],
+  },
+  {
+    id: 'BR-003',
+    name: 'Kukatpally Retail Hub',
+    code: 'KP-03',
+    address: 'Phase 1, KPHB Colony, Kukatpally, Hyderabad 500072',
+    phone: '+91 98765 43212',
+    manager: 'Deepak Varma',
+    counters: [
+      { id: 'CNT-06', name: 'Counter 1 (Main POS)', cashier: 'Manoj Kumar', isExpress: false },
+      { id: 'CNT-07', name: 'Counter 2 (Bulk Billing)', cashier: 'Sneha Reddy', isExpress: false },
+    ],
+  },
 ];
 
 export const UNITS = ['pack', 'bag', 'bottle', 'kg', 'g', 'L', 'ml', 'pcs', 'bar', 'tube', 'loaf', 'cup', 'carton', 'tetra', 'roll'];
@@ -95,6 +141,10 @@ export function getSettingsDefaults() {
     labelSize: '50x30',
     receiptLayout: '80mm',
     demoBanner: true,
+    variantSelectionOnScan: true,
+    multiVariantBarcodes: true,
+    activeBranchId: 'BR-001',
+    activeCounterId: 'CNT-01',
   };
 }
 
@@ -141,6 +191,145 @@ function buildProducts(createdAt) {
       }
     }
 
+    let variants = [];
+    if (p.sku === 'SUG-001') {
+      variants = [
+        {
+          id: 'VAR-SUG-500G',
+          name: '500 g',
+          sku: 'SUG-001-500G',
+          barcode: '890100000003-500',
+          purchasePricePaise: rupeesToPaise(21),
+          sellingPricePaise: rupeesToPaise(25),
+          quantity: 40,
+          unit: 'pack',
+        },
+        {
+          id: 'VAR-SUG-1KG',
+          name: '1 kg',
+          sku: 'SUG-001-1KG',
+          barcode: '890100000003',
+          purchasePricePaise: rupeesToPaise(40),
+          sellingPricePaise: rupeesToPaise(48),
+          quantity: 80,
+          unit: 'pack',
+          isDefault: true,
+        },
+        {
+          id: 'VAR-SUG-5KG',
+          name: '5 kg',
+          sku: 'SUG-001-5KG',
+          barcode: '890100000003-5KG',
+          purchasePricePaise: rupeesToPaise(195),
+          sellingPricePaise: rupeesToPaise(230),
+          quantity: 25,
+          unit: 'bag',
+        },
+      ];
+    } else if (p.sku === 'RIC-001') {
+      variants = [
+        {
+          id: 'VAR-RIC-1KG',
+          name: '1 kg',
+          sku: 'RIC-001-1KG',
+          barcode: '890100000001-1KG',
+          purchasePricePaise: rupeesToPaise(75),
+          sellingPricePaise: rupeesToPaise(90),
+          quantity: 30,
+          unit: 'bag',
+        },
+        {
+          id: 'VAR-RIC-5KG',
+          name: '5 kg',
+          sku: 'RIC-001-5KG',
+          barcode: '890100000001',
+          purchasePricePaise: rupeesToPaise(360),
+          sellingPricePaise: rupeesToPaise(425),
+          quantity: 48,
+          unit: 'bag',
+          isDefault: true,
+        },
+        {
+          id: 'VAR-RIC-10KG',
+          name: '10 kg',
+          sku: 'RIC-001-10KG',
+          barcode: '890100000001-10KG',
+          purchasePricePaise: rupeesToPaise(700),
+          sellingPricePaise: rupeesToPaise(820),
+          quantity: 18,
+          unit: 'bag',
+        },
+      ];
+    } else if (p.sku === 'OIL-001') {
+      variants = [
+        {
+          id: 'VAR-OIL-500ML',
+          name: '500 ml',
+          sku: 'OIL-001-500ML',
+          barcode: '890100000005-500',
+          purchasePricePaise: rupeesToPaise(62),
+          sellingPricePaise: rupeesToPaise(78),
+          quantity: 25,
+          unit: 'bottle',
+        },
+        {
+          id: 'VAR-OIL-1L',
+          name: '1 L',
+          sku: 'OIL-001-1L',
+          barcode: '890100000005',
+          purchasePricePaise: rupeesToPaise(118),
+          sellingPricePaise: rupeesToPaise(145),
+          quantity: 40,
+          unit: 'bottle',
+          isDefault: true,
+        },
+        {
+          id: 'VAR-OIL-5L',
+          name: '5 L',
+          sku: 'OIL-001-5L',
+          barcode: '890100000005-5L',
+          purchasePricePaise: rupeesToPaise(570),
+          sellingPricePaise: rupeesToPaise(690),
+          quantity: 12,
+          unit: 'bottle',
+        },
+      ];
+    } else if (p.sku === 'TEA-001') {
+      variants = [
+        {
+          id: 'VAR-TEA-100G',
+          name: '100 g',
+          sku: 'TEA-001-100G',
+          barcode: '890100000010-100',
+          purchasePricePaise: rupeesToPaise(42),
+          sellingPricePaise: rupeesToPaise(58),
+          quantity: 20,
+          unit: 'pack',
+        },
+        {
+          id: 'VAR-TEA-250G',
+          name: '250 g',
+          sku: 'TEA-001-250G',
+          barcode: '890100000010',
+          purchasePricePaise: rupeesToPaise(98),
+          sellingPricePaise: rupeesToPaise(135),
+          quantity: 34,
+          unit: 'pack',
+          isDefault: true,
+        },
+        {
+          id: 'VAR-TEA-500G',
+          name: '500 g',
+          sku: 'TEA-001-500G',
+          barcode: '890100000010-500',
+          purchasePricePaise: rupeesToPaise(190),
+          sellingPricePaise: rupeesToPaise(255),
+          quantity: 15,
+          unit: 'pack',
+        },
+      ];
+    }
+
     return {
       id: uid('PRD', i + 1),
       name: p.name,
@@ -153,6 +342,7 @@ function buildProducts(createdAt) {
       quantity: p.qty,
       minStock: p.min,
       unit: p.unit,
+      variants,
       mfgDate,
       expiryDate,
       batchNo: `BAT-${p.sku}-26`,
@@ -231,12 +421,19 @@ function buildSampleInvoices(products, now) {
       const amountPaid = method === 'cash'
         ? Math.ceil(totals.grandTotalPaise / 10000) * 10000
         : totals.grandTotalPaise;
+      const branch = DEFAULT_BRANCHES[seq % DEFAULT_BRANCHES.length];
+      const counter = branch.counters[seq % branch.counters.length];
       invoices.push({
         id: uid('BILL', seq),
         invoiceNumber: `INV-2026-${String(seq).padStart(4, '0')}`,
         createdAt: createdAt.toISOString(),
         customerName: names[nameIdx],
         customerPhone: phones[nameIdx],
+        branchId: branch.id,
+        branchName: branch.name,
+        counterId: counter.id,
+        counterName: counter.name,
+        cashierName: counter.cashier,
         items,
         subtotalPaise: totals.subtotalPaise,
         discountPaise: totals.discountPaise,
@@ -328,6 +525,10 @@ export function createInitialState() {
   return {
     shop: getShopDefaults(),
     settings: getSettingsDefaults(),
+    branches: DEFAULT_BRANCHES,
+    categories: [...CATEGORIES],
+    activeBranchId: 'BR-001',
+    activeCounterId: 'CNT-01',
     products,
     invoices,
     movements,

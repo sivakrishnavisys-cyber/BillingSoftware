@@ -55,8 +55,9 @@ export default function Receipt({ invoice, shop, layout = '80mm' }) {
             {invoice.customerPhone ? <p>Mobile: {invoice.customerPhone}</p> : null}
           </div>
           <div>
-            <span className="a4-box-title">POS Counter:</span>
-            <p>Terminal #01 (Standard Checkout)</p>
+            <span className="a4-box-title">Branch & Counter:</span>
+            <p><strong>{invoice.branchName || 'Main Branch'}</strong></p>
+            <p>{invoice.counterName || 'Counter 1 (Express POS)'} {invoice.cashierName ? `· Cashier: ${invoice.cashierName}` : ''}</p>
           </div>
         </div>
 
@@ -162,6 +163,7 @@ export default function Receipt({ invoice, shop, layout = '80mm' }) {
         <p>Ph: {shop.phone}</p>
         {shop.email ? <p>{shop.email}</p> : null}
         {shop.gstin ? <p>GSTIN: {shop.gstin}</p> : null}
+        <p style={{ fontWeight: 700, marginTop: 2 }}>{invoice.branchName || 'Main Branch'} · {invoice.counterName || 'Counter 1'}</p>
       </header>
 
       <div className="receipt-meta">

@@ -31,11 +31,11 @@ import BillItemTable from '../components/BillItemTable';
 import PaymentModal from '../components/PaymentModal';
 import PrintStage from '../components/PrintStage';
 import PrinterAnimationModal from '../components/PrinterAnimationModal';
+import VariantSelectModal from '../components/VariantSelectModal';
 import Receipt from '../components/Receipt';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { useStore } from '../context/StoreContext';
 import { useLanguage } from '../context/LanguageContext';
-import { CATEGORIES } from '../data/demoData';
 import {
   addOrIncreaseItem,
   completeCheckout,
@@ -44,14 +44,42 @@ import {
 } from '../services/billingService';
 import { saveCustomer } from '../services/khataService';
 import { searchProducts } from '../services/productService';
-import { lookupProductByCode } from '../utils/barcodeUtils';
+import { lookupProductByCode, lookupProductOrVariant } from '../utils/barcodeUtils';
 import { playBeep, playSuccessChime } from '../utils/audioUtils';
 import { formatINR, parseRupeeInput } from '../utils/currencyUtils';
 import { exportInvoicePdf } from '../utils/pdfReceiptUtils';
 
 export default function POS() {
-  const { state, products, settings, shop, customers, invoices, heldBills = [], update, showToast } = useStore();
+  const {
+    state,
+    products,
+    settings,
+    shop,
+    customers,
+    invoices,
+    branches = [],
+    categories = [],
+    activeBranchId,
+    activeCounterId,
+    setActiveBranch,
+    setActiveCounter,
+    heldBills = [],
+    update,
+    showToast,
+  } = useStore();
   const { t } = useLanguage();
+
+  // Active branch & counter
+  const activeBranch = useMemo(
+    () => branches.find((b) => b.id === activeBranchId) || branches[0],
+    [branches, activeBranchId]
+  );
+  const activeCounter = useMemo(
+    () =>
+      activeBranch?.counters?.find((c) => c.id === activeCounterId) ||
+      activeBranch?.counters?.[0],
+    [activeBranch, activeCounterId]
+  );
 
   // Search & Cart state
   const [omniQuery, setOmniQuery] = useState('');
@@ -59,6 +87,9 @@ export default function POS() {
   const [items, setItems] = useState([]);
   const [billDiscountType, setBillDiscountType] = useState('percent');
   const [billDiscountValue, setBillDiscountValue] = useState(settings.defaultBillDiscountPercent || 0);
+
+  // Variant selector modal state
+  const [variantModalProduct, setVariantModalProduct] = useState(null);
 
   // Mobile View Tabs: 'cart' or 'catalog'
   const [mobileTab, setMobileTab] = useState('cart');
@@ -125,36 +156,83 @@ export default function POS() {
     setTimeout(() => setFlashMsg((m) => (m?.text === text ? null : m)), 3000);
   };
 
-  const addProductToBill = useCallback((product, qty = 1) => {
-    try {
-      setItems((prev) => addOrIncreaseItem(prev, product, qty));
-      playBeep();
-      flash(`${product.name} added.`, 'success');
-      setOmniQuery('');
-      if (window.innerWidth > 768) {
-        searchInputRef.current?.focus();
+  const rowKeyOf = (item) =>
+    item.lineKey || (item.variantId ? `${item.productId}__${item.variantId}` : item.productId);
+
+  const addProductToBill = useCallback(
+    (product, qty = 1, variant = null) => {
+      try {
+        let itemToAdd = product;
+        if (variant) {
+          itemToAdd = {
+            ...product,
+            variantId: variant.id,
+            variantName: variant.name,
+            name: `${product.name} (${variant.name})`,
+            sku: variant.sku || product.sku,
+            barcode: variant.barcode || product.barcode,
+            sellingPricePaise: variant.sellingPricePaise,
+            purchasePricePaise: variant.purchasePricePaise,
+            unit: variant.unit || product.unit,
+            quantity: variant.quantity !== undefined ? variant.quantity : product.quantity,
+          };
+        }
+        setItems((prev) => addOrIncreaseItem(prev, itemToAdd, qty));
+        playBeep();
+        flash(`${itemToAdd.name} added.`, 'success');
+        setOmniQuery('');
+        setVariantModalProduct(null);
+        if (window.innerWidth > 768) {
+          searchInputRef.current?.focus();
+        }
+      } catch (err) {
+        flash(err.message, 'error');
+        showToast(err.message, 'error');
       }
-    } catch (err) {
-      flash(err.message, 'error');
-      showToast(err.message, 'error');
+    },
+    [showToast]
+  );
+
+  const handleProductSelection = (product, maybeVariant = null) => {
+    if (maybeVariant) {
+      addProductToBill(product, 1, maybeVariant);
+      return;
     }
-  }, [showToast]);
+    const hasVariants = Array.isArray(product.variants) && product.variants.length > 0;
+    const variantPopupEnabled = settings.variantSelectionOnScan !== false;
+
+    if (hasVariants && variantPopupEnabled) {
+      setVariantModalProduct(product);
+      return;
+    }
+
+    const defaultVar = product.variants?.find((v) => v.isDefault) || product.variants?.[0];
+    if (hasVariants && defaultVar) {
+      addProductToBill(product, 1, defaultVar);
+    } else {
+      addProductToBill(product, 1);
+    }
+  };
 
   const handleOmniSubmit = (raw) => {
     const term = String(raw || '').trim();
     if (!term) return;
 
-    // 1. Try exact barcode or SKU match
-    const byCode = lookupProductByCode(liveProducts, term);
-    if (byCode) {
-      addProductToBill(byCode);
+    // 1. Try exact barcode or variant barcode match
+    const hit = lookupProductOrVariant(liveProducts, term);
+    if (hit) {
+      if (hit.isVariantScan && hit.variant) {
+        addProductToBill(hit.product, 1, hit.variant);
+        return;
+      }
+      handleProductSelection(hit.product);
       return;
     }
 
     // 2. Try first search match
     const hits = searchProducts(liveProducts, term);
     if (hits.length > 0) {
-      addProductToBill(hits[0]);
+      handleProductSelection(hits[0]);
       return;
     }
 
@@ -162,23 +240,28 @@ export default function POS() {
     showToast(`No product found for “${term}”.`, 'error');
   };
 
-  const onQtyChange = (id, nextQty) => {
+  const onQtyChange = (keyOrId, nextQty) => {
     try {
-      setItems((prev) => setItemQty(prev, id, nextQty, liveProducts));
+      setItems((prev) => setItemQty(prev, keyOrId, nextQty, liveProducts));
     } catch (err) {
       flash(err.message, 'error');
       showToast(err.message, 'error');
     }
   };
 
-  const onLineDiscount = (id, value) => {
+  const onLineDiscount = (keyOrId, value) => {
     const paise = Math.max(0, parseRupeeInput(value || 0));
     setItems((prev) =>
       prev.map((item) => {
-        if (item.productId !== id) return item;
+        const k = rowKeyOf(item);
+        if (k !== keyOrId && item.productId !== keyOrId) return item;
         return { ...item, discountPaise: paise };
       })
     );
+  };
+
+  const removeItem = (targetKey) => {
+    setItems((prev) => prev.filter((x) => rowKeyOf(x) !== targetKey && x.productId !== targetKey));
   };
 
   const handleQuickPay = (method) => {
@@ -200,6 +283,11 @@ export default function POS() {
         items,
         billDiscountType,
         billDiscountValue,
+        branchId: activeBranch?.id,
+        branchName: activeBranch?.name,
+        counterId: activeCounter?.id,
+        counterName: activeCounter?.name,
+        cashierName: activeCounter?.cashier,
         paymentMethod: paymentDetails?.paymentMethod || 'cash',
         amountPaidPaise: paymentDetails?.amountPaidPaise,
         customerId: paymentDetails?.customerId || activeCustomer?.id || null,
@@ -455,6 +543,55 @@ export default function POS() {
           )}
         </div>
 
+        {/* Multi-Branch & Multi-Counter Quick Switcher */}
+        <div className="pos-branch-counter-control" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <select
+            className="branch-quick-select"
+            value={activeBranchId}
+            onChange={(e) => setActiveBranch(e.target.value)}
+            title="Switch Branch"
+            style={{
+              padding: '5px 10px',
+              fontSize: '0.8rem',
+              fontWeight: 600,
+              borderRadius: 6,
+              border: '1px solid var(--border)',
+              background: 'var(--surface-sunken)',
+              color: 'var(--text)',
+              cursor: 'pointer',
+            }}
+          >
+            {branches.map((b) => (
+              <option key={b.id} value={b.id}>
+                🏢 {b.name}
+              </option>
+            ))}
+          </select>
+
+          <select
+            className="counter-quick-select"
+            value={activeCounterId}
+            onChange={(e) => setActiveCounter(e.target.value)}
+            title="Switch Counter"
+            style={{
+              padding: '5px 10px',
+              fontSize: '0.8rem',
+              fontWeight: 600,
+              borderRadius: 6,
+              border: '1px solid var(--border)',
+              background: 'var(--surface-sunken)',
+              color: 'var(--text)',
+              cursor: 'pointer',
+            }}
+          >
+            {(activeBranch?.counters || []).map((c) => (
+              <option key={c.id} value={c.id}>
+                ⚡ {c.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
         <div className="pos-meta-status">
           <button
             type="button"
@@ -550,7 +687,7 @@ export default function POS() {
                   <div
                     key={p.id}
                     className="suggestion-item"
-                    onClick={() => addProductToBill(p)}
+                    onClick={() => handleProductSelection(p)}
                   >
                     <div>
                       <strong>{p.name}</strong>
@@ -623,150 +760,158 @@ export default function POS() {
                       </tr>
                     </thead>
                     <tbody>
-                      {items.map((it, idx) => (
-                        <tr key={it.productId}>
-                          <td className="muted tiny">{idx + 1}</td>
-                          <td>
-                            <strong>{it.name}</strong>
-                            <div className="muted tiny">
-                              {it.sku} · {it.barcode}
-                            </div>
-                          </td>
-                          <td style={{ textAlign: 'right' }}>{formatINR(it.unitPricePaise)}</td>
-                          <td>
-                            <div className="qty-stepper compact">
-                              <button
-                                type="button"
-                                onClick={() => onQtyChange(it.productId, it.qty - 1)}
-                                aria-label="Decrease quantity"
-                              >
-                                <Minus size={13} />
-                              </button>
+                      {items.map((it, idx) => {
+                        const rowKey = rowKeyOf(it);
+                        return (
+                          <tr key={rowKey}>
+                            <td className="muted tiny">{idx + 1}</td>
+                            <td>
+                              <strong>{it.name}</strong>
+                              <div className="muted tiny" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                {it.variantName ? (
+                                  <span className="badge badge-in" style={{ fontSize: '0.65rem', padding: '1px 5px' }}>
+                                    {it.variantName}
+                                  </span>
+                                ) : null}
+                                <span>{it.sku} · {it.barcode}</span>
+                              </div>
+                            </td>
+                            <td style={{ textAlign: 'right' }}>{formatINR(it.unitPricePaise)}</td>
+                            <td>
+                              <div className="qty-stepper compact">
+                                <button
+                                  type="button"
+                                  onClick={() => onQtyChange(rowKey, it.qty - 1)}
+                                  aria-label="Decrease quantity"
+                                >
+                                  <Minus size={13} />
+                                </button>
+                                <input
+                                  type="number"
+                                  min="1"
+                                  value={it.qty}
+                                  onChange={(e) => onQtyChange(rowKey, e.target.value)}
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => onQtyChange(rowKey, it.qty + 1)}
+                                  aria-label="Increase quantity"
+                                >
+                                  <Plus size={13} />
+                                </button>
+                              </div>
+                            </td>
+                            <td>
                               <input
-                                type="number"
-                                min="1"
-                                value={it.qty}
-                                onChange={(e) => onQtyChange(it.productId, e.target.value)}
+                                className="discount-input compact"
+                                value={it.discountPaise ? (it.discountPaise / 100).toFixed(2) : ''}
+                                placeholder="0.00"
+                                onChange={(e) => onLineDiscount(rowKey, e.target.value)}
                               />
+                            </td>
+                            <td style={{ textAlign: 'right' }}>
+                              <strong>
+                                {formatINR(
+                                  it.lineTotalPaise ||
+                                    it.unitPricePaise * it.qty - (it.discountPaise || 0)
+                                )}
+                              </strong>
+                            </td>
+                            <td>
                               <button
                                 type="button"
-                                onClick={() => onQtyChange(it.productId, it.qty + 1)}
-                                aria-label="Increase quantity"
+                                className="icon-btn danger"
+                                onClick={() => removeItem(rowKey)}
+                                title="Remove item"
                               >
-                                <Plus size={13} />
+                                <Trash2 size={14} />
                               </button>
-                            </div>
-                          </td>
-                          <td>
-                            <input
-                              className="discount-input compact"
-                              value={it.discountPaise ? (it.discountPaise / 100).toFixed(2) : ''}
-                              placeholder="0.00"
-                              onChange={(e) => onLineDiscount(it.productId, e.target.value)}
-                            />
-                          </td>
-                          <td style={{ textAlign: 'right' }}>
-                            <strong>
-                              {formatINR(
-                                it.lineTotalPaise ||
-                                  it.unitPricePaise * it.qty - (it.discountPaise || 0)
-                              )}
-                            </strong>
-                          </td>
-                          <td>
-                            <button
-                              type="button"
-                              className="icon-btn danger"
-                              onClick={() =>
-                                setItems((prev) =>
-                                  prev.filter((x) => x.productId !== it.productId)
-                                )
-                              }
-                              title="Remove item"
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
 
                 {/* Mobile Touch-Friendly Cart Cards View */}
                 <div className="cart-cards-mobile">
-                  {items.map((it, idx) => (
-                    <div key={it.productId} className="cart-mobile-item-card">
-                      <div className="cart-mobile-card-top">
-                        <div className="cart-mobile-item-info">
-                          <span className="cart-mobile-item-num">#{idx + 1}</span>
-                          <div>
-                            <strong className="cart-mobile-item-title">{it.name}</strong>
-                            <div className="cart-mobile-item-meta">
-                              {it.sku} · {it.barcode}
+                  {items.map((it, idx) => {
+                    const rowKey = rowKeyOf(it);
+                    return (
+                      <div key={rowKey} className="cart-mobile-item-card">
+                        <div className="cart-mobile-card-top">
+                          <div className="cart-mobile-item-info">
+                            <span className="cart-mobile-item-num">#{idx + 1}</span>
+                            <div>
+                              <strong className="cart-mobile-item-title">{it.name}</strong>
+                              <div className="cart-mobile-item-meta" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                {it.variantName ? (
+                                  <span className="badge badge-in" style={{ fontSize: '0.65rem', padding: '1px 5px' }}>
+                                    {it.variantName}
+                                  </span>
+                                ) : null}
+                                <span>{it.sku} · {it.barcode}</span>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                        <button
-                          type="button"
-                          className="icon-btn danger cart-mobile-trash-btn"
-                          onClick={() =>
-                            setItems((prev) =>
-                              prev.filter((x) => x.productId !== it.productId)
-                            )
-                          }
-                          aria-label={`Remove ${it.name}`}
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-
-                      <div className="cart-mobile-card-bottom">
-                        <div className="qty-stepper touch-stepper">
                           <button
                             type="button"
-                            onClick={() => onQtyChange(it.productId, it.qty - 1)}
-                            aria-label="Decrease quantity"
+                            className="icon-btn danger cart-mobile-trash-btn"
+                            onClick={() => removeItem(rowKey)}
+                            aria-label={`Remove ${it.name}`}
                           >
-                            <Minus size={15} />
-                          </button>
-                          <input
-                            type="number"
-                            min="1"
-                            value={it.qty}
-                            onChange={(e) => onQtyChange(it.productId, e.target.value)}
-                          />
-                          <button
-                            type="button"
-                            onClick={() => onQtyChange(it.productId, it.qty + 1)}
-                            aria-label="Increase quantity"
-                          >
-                            <Plus size={15} />
+                            <Trash2 size={16} />
                           </button>
                         </div>
 
-                        <div className="cart-mobile-discount-box">
-                          <span className="tiny muted">Disc ₹:</span>
-                          <input
-                            className="discount-input compact"
-                            value={it.discountPaise ? (it.discountPaise / 100).toFixed(2) : ''}
-                            placeholder="0"
-                            onChange={(e) => onLineDiscount(it.productId, e.target.value)}
-                          />
-                        </div>
+                        <div className="cart-mobile-card-bottom">
+                          <div className="qty-stepper touch-stepper">
+                            <button
+                              type="button"
+                              onClick={() => onQtyChange(rowKey, it.qty - 1)}
+                              aria-label="Decrease quantity"
+                            >
+                              <Minus size={15} />
+                            </button>
+                            <input
+                              type="number"
+                              min="1"
+                              value={it.qty}
+                              onChange={(e) => onQtyChange(rowKey, e.target.value)}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => onQtyChange(rowKey, it.qty + 1)}
+                              aria-label="Increase quantity"
+                            >
+                              <Plus size={15} />
+                            </button>
+                          </div>
 
-                        <div className="cart-mobile-total-block">
-                          <span className="tiny muted">{formatINR(it.unitPricePaise)} ea</span>
-                          <strong className="cart-mobile-total-val">
-                            {formatINR(
-                              it.lineTotalPaise ||
-                                it.unitPricePaise * it.qty - (it.discountPaise || 0)
-                            )}
-                          </strong>
+                          <div className="cart-mobile-discount-box">
+                            <span className="tiny muted">Disc ₹:</span>
+                            <input
+                              className="discount-input compact"
+                              value={it.discountPaise ? (it.discountPaise / 100).toFixed(2) : ''}
+                              placeholder="0"
+                              onChange={(e) => onLineDiscount(rowKey, e.target.value)}
+                            />
+                          </div>
+
+                          <div className="cart-mobile-total-block">
+                            <span className="tiny muted">{formatINR(it.unitPricePaise)} ea</span>
+                            <strong className="cart-mobile-total-val">
+                              {formatINR(
+                                it.lineTotalPaise ||
+                                  it.unitPricePaise * it.qty - (it.discountPaise || 0)
+                              )}
+                            </strong>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </>
             )}
@@ -784,7 +929,7 @@ export default function POS() {
                 >
                   {t('all_items')}
                 </button>
-                {CATEGORIES.map((cat) => (
+                {categories.map((cat) => (
                   <button
                     type="button"
                     key={cat}
@@ -800,16 +945,22 @@ export default function POS() {
             <div className="compact-product-grid">
               {quickCatalogItems.map((p) => {
                 const isOut = p.quantity <= 0;
+                const hasVariants = Array.isArray(p.variants) && p.variants.length > 0;
                 return (
                   <button
                     type="button"
                     key={p.id}
                     className={`shelf-item-card ${isOut ? 'out' : ''}`}
-                    onClick={() => addProductToBill(p)}
+                    onClick={() => handleProductSelection(p)}
                     disabled={isOut}
-                    title={isOut ? 'Out of Stock' : `Tap to add ${p.name}`}
+                    title={isOut ? 'Out of Stock' : hasVariants ? `Tap to choose size for ${p.name}` : `Tap to add ${p.name}`}
                   >
                     <span className="shelf-name">{p.name}</span>
+                    {hasVariants ? (
+                      <span className="badge badge-in" style={{ fontSize: '0.62rem', padding: '1px 5px', width: 'fit-content' }}>
+                        {p.variants.length} Sizes Available
+                      </span>
+                    ) : null}
                     <div className="shelf-price-row">
                       <strong className="shelf-price">
                         {formatINR(p.sellingPricePaise)}
@@ -1259,6 +1410,16 @@ export default function POS() {
           setClearOpen(false);
           flash('Cart cleared.', 'info');
         }}
+      />
+
+      {/* Variant Selection Modal */}
+      <VariantSelectModal
+        open={Boolean(variantModalProduct)}
+        product={variantModalProduct}
+        onSelectVariant={(v) => {
+          addProductToBill(variantModalProduct, 1, v);
+        }}
+        onClose={() => setVariantModalProduct(null)}
       />
 
       {/* Animated POS Thermal Printer Modal */}

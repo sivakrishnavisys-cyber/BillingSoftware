@@ -29,12 +29,53 @@ export function generateSku(name, category, existingSkus = []) {
   return sku;
 }
 
-export function lookupProductByCode(products, code) {
+export function lookupProductOrVariant(products, code) {
   const q = String(code || '').trim().toLowerCase();
   if (!q) return null;
-  return (products || []).find((p) =>
-    String(p.barcode).toLowerCase() === q
-    || String(p.sku).toLowerCase() === q
-    || String(p.id).toLowerCase() === q
-  ) || null;
+
+  for (const p of products || []) {
+    // 1. Check variant barcode or variant SKU match first
+    if (Array.isArray(p.variants) && p.variants.length > 0) {
+      const matchedVariant = p.variants.find(
+        (v) =>
+          String(v.barcode || '').toLowerCase() === q ||
+          String(v.sku || '').toLowerCase() === q ||
+          String(v.id || '').toLowerCase() === q
+      );
+      if (matchedVariant) {
+        return { product: p, variant: matchedVariant, isVariantScan: true };
+      }
+    }
+
+    // 2. Check main product code
+    if (
+      String(p.barcode || '').toLowerCase() === q ||
+      String(p.sku || '').toLowerCase() === q ||
+      String(p.id || '').toLowerCase() === q
+    ) {
+      return { product: p, variant: null, isVariantScan: false };
+    }
+  }
+
+  return null;
+}
+
+export function lookupProductByCode(products, code) {
+  const hit = lookupProductOrVariant(products, code);
+  if (!hit) return null;
+  if (hit.variant) {
+    return {
+      ...hit.product,
+      variantId: hit.variant.id,
+      variantName: hit.variant.name,
+      name: `${hit.product.name} (${hit.variant.name})`,
+      sku: hit.variant.sku,
+      barcode: hit.variant.barcode,
+      sellingPricePaise: hit.variant.sellingPricePaise,
+      purchasePricePaise: hit.variant.purchasePricePaise,
+      unit: hit.variant.unit || hit.product.unit,
+      quantity: hit.variant.quantity !== undefined ? hit.variant.quantity : hit.product.quantity,
+    };
+  }
+  return hit.product;
 }

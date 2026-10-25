@@ -36,24 +36,39 @@ export function summarizeCart(items, { billDiscountType = 'amount', billDiscount
   };
 }
 
+export function getItemLineKey(item) {
+  if (item.lineKey) return item.lineKey;
+  return item.variantId ? `${item.productId}__${item.variantId}` : item.productId;
+}
+
 export function addOrIncreaseItem(items, product, qty = 1) {
   const addQty = Number(qty) || 1;
-  const existing = items.find((it) => it.productId === product.id);
+  const targetKey = product.variantId ? `${product.id}__${product.variantId}` : product.id;
+  const existing = items.find((it) => getItemLineKey(it) === targetKey);
+  const maxStock = product.quantity !== undefined ? product.quantity : 9999;
+
+  const displayName = product.variantName && !product.name.includes(product.variantName)
+    ? `${product.name} (${product.variantName})`
+    : product.name;
+
   if (existing) {
     const nextQty = existing.qty + addQty;
-    if (nextQty > product.quantity) {
-      throw new Error(`Only ${product.quantity} ${product.unit} of ${product.name} available in stock.`);
+    if (nextQty > maxStock) {
+      throw new Error(`Only ${maxStock} ${product.unit} of ${displayName} available in stock.`);
     }
-    return items.map((it) => (it.productId === product.id ? { ...it, qty: nextQty } : it));
+    return items.map((it) => (getItemLineKey(it) === targetKey ? { ...it, qty: nextQty } : it));
   }
-  if (product.quantity < addQty) {
-    throw new Error(`${product.name} is out of stock or does not have enough quantity.`);
+  if (maxStock < addQty) {
+    throw new Error(`${displayName} is out of stock or does not have enough quantity.`);
   }
   return [
     ...items,
     {
+      lineKey: targetKey,
       productId: product.id,
-      name: product.name,
+      variantId: product.variantId || null,
+      variantName: product.variantName || '',
+      name: displayName,
       sku: product.sku,
       barcode: product.barcode,
       qty: addQty,
@@ -65,17 +80,30 @@ export function addOrIncreaseItem(items, product, qty = 1) {
   ];
 }
 
-export function setItemQty(items, productId, qty, products) {
+export function setItemQty(items, identifier, qty, products) {
   const nextQty = Number(qty);
   if (!Number.isFinite(nextQty) || nextQty < 0) {
     throw new Error('Quantity must be zero or more.');
   }
-  const product = products.find((p) => p.id === productId);
-  if (product && nextQty > product.quantity) {
-    throw new Error(`Only ${product.quantity} ${product.unit} available in stock.`);
+  const targetItem = items.find((it) => getItemLineKey(it) === identifier || it.productId === identifier);
+  if (!targetItem) return items;
+
+  const product = products.find((p) => p.id === targetItem.productId);
+  const variant = product?.variants?.find((v) => v.id === targetItem.variantId);
+  const maxStock = variant?.quantity !== undefined ? variant.quantity : (product?.quantity || 9999);
+
+  if (nextQty > maxStock) {
+    throw new Error(`Only ${maxStock} ${targetItem.unit} available in stock.`);
   }
-  if (nextQty === 0) return items.filter((it) => it.productId !== productId);
-  return items.map((it) => (it.productId === productId ? { ...it, qty: nextQty } : it));
+  if (nextQty === 0) {
+    return items.filter((it) => getItemLineKey(it) !== identifier && it.productId !== identifier);
+  }
+  return items.map((it) => {
+    if (getItemLineKey(it) === identifier || it.productId === identifier) {
+      return { ...it, qty: nextQty };
+    }
+    return it;
+  });
 }
 
 export function validateCheckout(items, products) {
@@ -85,8 +113,10 @@ export function validateCheckout(items, products) {
     const product = products.find((p) => p.id === item.productId);
     if (!product) throw new Error(`${item.name} is no longer in the product list.`);
     if (product.status === 'inactive') throw new Error(`${product.name} is inactive and cannot be billed.`);
-    if (item.qty > product.quantity) {
-      throw new Error(`Not enough stock for ${product.name}. Available: ${product.quantity}.`);
+    const variant = product?.variants?.find((v) => v.id === item.variantId);
+    const available = variant?.quantity !== undefined ? variant.quantity : product.quantity;
+    if (item.qty > available) {
+      throw new Error(`Not enough stock for ${item.name}. Available: ${available}.`);
     }
   }
 }
@@ -135,10 +165,23 @@ export function completeCheckout(state, payload = {}) {
     };
   });
 
+  const branch = (state.branches || []).find((b) => b.id === (payload.branchId || state.activeBranchId)) || state.branches?.[0];
+  const branchId = payload.branchId || branch?.id || 'BR-001';
+  const branchName = payload.branchName || branch?.name || 'Main Branch - Banjara Hills';
+  const counter = branch?.counters?.find((c) => c.id === (payload.counterId || state.activeCounterId)) || branch?.counters?.[0];
+  const counterId = payload.counterId || counter?.id || 'CNT-01';
+  const counterName = payload.counterName || counter?.name || 'Counter 1 (Express POS)';
+  const cashierName = payload.cashierName || counter?.cashier || 'Pooja Verma';
+
   const invoice = {
     id: `BILL-${invoiceSeq}`,
     invoiceNumber,
     createdAt,
+    branchId,
+    branchName,
+    counterId,
+    counterName,
+    cashierName,
     customerId: customerId || null,
     customerName: String(customerName || '').trim(),
     customerPhone: String(customerPhone || '').trim(),

@@ -4,6 +4,7 @@ export { getStockStatus };
 
 export function applyStockChange(state, {
   productId,
+  variantId = null,
   changeQty,
   type,
   reason,
@@ -24,10 +25,23 @@ export function applyStockChange(state, {
     throw new Error(`Not enough stock for ${product.name}. Available: ${previousQty}.`);
   }
 
+  // Also update variant quantity if variantId exists
+  let updatedVariants = product.variants;
+  if (variantId && Array.isArray(product.variants)) {
+    updatedVariants = product.variants.map((v) => {
+      if (v.id === variantId) {
+        const vPrev = Number(v.quantity) || 0;
+        return { ...v, quantity: Math.max(0, vPrev + delta) };
+      }
+      return v;
+    });
+  }
+
   const seq = (state.meta?.movementSeq || 0) + 1;
   const movement = {
     id: `MOV-${String(seq).padStart(4, '0')}`,
     productId,
+    variantId: variantId || null,
     productName: product.name,
     previousQty,
     changeQty: delta,
@@ -40,7 +54,9 @@ export function applyStockChange(state, {
 
   return {
     ...state,
-    products: state.products.map((p) => (p.id === productId ? { ...p, quantity: newQty } : p)),
+    products: state.products.map((p) =>
+      p.id === productId ? { ...p, quantity: newQty, variants: updatedVariants } : p
+    ),
     movements: [movement, ...state.movements],
     meta: { ...state.meta, movementSeq: seq },
   };
@@ -51,6 +67,7 @@ export function applySaleDeductions(state, invoice) {
   for (const item of invoice.items) {
     next = applyStockChange(next, {
       productId: item.productId,
+      variantId: item.variantId || null,
       changeQty: -Math.abs(item.qty),
       type: 'sale',
       reason: `Sold on ${invoice.invoiceNumber}`,

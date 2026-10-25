@@ -13,11 +13,13 @@ import { exportInvoicePdf } from '../utils/pdfReceiptUtils';
 import { paymentLabel } from '../utils/receiptUtils';
 
 export default function SalesHistory() {
-  const { invoices, shop, settings, showToast } = useStore();
+  const { invoices, branches = [], shop, settings, showToast } = useStore();
   const [q, setQ] = useState('');
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
   const [method, setMethod] = useState('all');
+  const [branchFilter, setBranchFilter] = useState('all');
+  const [counterFilter, setCounterFilter] = useState('all');
   const [printInvoice, setPrintInvoice] = useState(null);
   const [printerAnimationOpen, setPrinterAnimationOpen] = useState(false);
   const [detail, setDetail] = useState(null);
@@ -56,21 +58,49 @@ export default function SalesHistory() {
       if (!matchInv && !matchCust && !matchPhone) return false;
     }
     if (method !== 'all' && inv.paymentMethod !== method) return false;
+    if (branchFilter !== 'all' && (inv.branchId || 'BR-001') !== branchFilter) return false;
+    if (counterFilter !== 'all' && (inv.counterId || 'CNT-01') !== counterFilter) return false;
     const t = new Date(inv.createdAt).getTime();
     if (from && t < startOfDay(from).getTime()) return false;
     if (to && t > endOfDay(to).getTime()) return false;
     return true;
-  }), [invoices, q, from, to, method]);
+  }), [invoices, q, from, to, method, branchFilter, counterFilter]);
 
   const filteredRevenue = filtered.reduce((sum, inv) => sum + inv.grandTotalPaise, 0);
   const avgBill = filtered.length ? Math.round(filteredRevenue / filtered.length) : 0;
   const todayTotal = invoices.filter((inv) => isSameDay(inv.createdAt, today)).reduce((s, i) => s + i.grandTotalPaise, 0);
   const todayBills = invoices.filter((inv) => isSameDay(inv.createdAt, today)).length;
 
+  // Counter-wise sales performance breakdown
+  const counterSummary = useMemo(() => {
+    const map = {};
+    filtered.forEach((inv) => {
+      const counterKey = inv.counterName || 'Counter 1';
+      if (!map[counterKey]) {
+        map[counterKey] = {
+          name: counterKey,
+          branch: inv.branchName || 'Main Branch',
+          bills: 0,
+          revenuePaise: 0,
+          cashPaise: 0,
+          upiPaise: 0,
+        };
+      }
+      map[counterKey].bills += 1;
+      map[counterKey].revenuePaise += inv.grandTotalPaise;
+      if (inv.paymentMethod === 'cash') map[counterKey].cashPaise += inv.grandTotalPaise;
+      if (inv.paymentMethod === 'upi') map[counterKey].upiPaise += inv.grandTotalPaise;
+    });
+    return Object.values(map);
+  }, [filtered]);
+
   const exportCsv = () => {
     const csv = toCsv(filtered, [
       { label: 'Invoice No', value: (i) => i.invoiceNumber },
       { label: 'Date & Time', value: (i) => formatDateTime(i.createdAt) },
+      { label: 'Branch', value: (i) => i.branchName || 'Main Branch' },
+      { label: 'Counter', value: (i) => i.counterName || 'Counter 1' },
+      { label: 'Cashier', value: (i) => i.cashierName || 'Staff' },
       { label: 'Customer Name', value: (i) => i.customerName || 'Walk-in' },
       { label: 'Customer Phone', value: (i) => i.customerPhone || '—' },
       { label: 'Item Lines', value: (i) => i.items.length },
@@ -174,15 +204,86 @@ export default function SalesHistory() {
           <select
             value={method}
             onChange={(e) => setMethod(e.target.value)}
-            style={{ flex: 1, minWidth: '130px' }}
+            style={{ flex: 1, minWidth: '120px' }}
           >
             <option value="all">All Payments</option>
             <option value="cash">Cash Only</option>
             <option value="upi">UPI Only</option>
             <option value="card">Card Only</option>
           </select>
+
+          <select
+            value={branchFilter}
+            onChange={(e) => setBranchFilter(e.target.value)}
+            style={{ flex: 1, minWidth: '140px' }}
+            title="Filter by Store Branch"
+          >
+            <option value="all">🏢 All Branches ({branches.length})</option>
+            {branches.map((b) => (
+              <option key={b.id} value={b.id}>
+                {b.name}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={counterFilter}
+            onChange={(e) => setCounterFilter(e.target.value)}
+            style={{ flex: 1, minWidth: '130px' }}
+            title="Filter by POS Counter"
+          >
+            <option value="all">⚡ All Counters</option>
+            <option value="CNT-01">Counter 1 (Express POS)</option>
+            <option value="CNT-02">Counter 2 (Grocery & Dairy)</option>
+            <option value="CNT-03">Counter 3 (General POS)</option>
+          </select>
         </div>
       </div>
+
+      {/* Counter-Wise Sales Breakdown */}
+      {counterSummary.length > 0 && (
+        <article className="card" style={{ marginBottom: 16, padding: '14px 18px', background: 'var(--surface-sunken)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+            <div>
+              <strong style={{ fontSize: '0.96rem', display: 'flex', alignItems: 'center', gap: 6 }}>
+                ⚡ Counter-Wise Sales Summary ({counterSummary.length} Active Counters)
+              </strong>
+              <span className="muted tiny">
+                Real-time breakdown of bills and revenue per POS counter terminal.
+              </span>
+            </div>
+            <span className="demo-pill">MULTI-COUNTER AUDIT</span>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 10 }}>
+            {counterSummary.map((cs) => (
+              <div
+                key={cs.name}
+                style={{
+                  background: 'var(--surface)',
+                  padding: '10px 14px',
+                  borderRadius: 8,
+                  border: '1px solid var(--border)',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <strong style={{ fontSize: '0.92rem' }}>{cs.name}</strong>
+                  <span className="badge badge-in" style={{ fontSize: '0.68rem' }}>
+                    {cs.bills} bills
+                  </span>
+                </div>
+                <div className="muted tiny" style={{ marginTop: 2 }}>{cs.branch}</div>
+                <div style={{ marginTop: 6, display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                  <span className="tiny muted">Revenue:</span>
+                  <strong style={{ fontSize: '1.05rem', color: 'var(--blue)' }}>
+                    {formatINR(cs.revenuePaise)}
+                  </strong>
+                </div>
+              </div>
+            ))}
+          </div>
+        </article>
+      )}
 
       {filtered.length === 0 ? (
         <EmptyState
@@ -199,6 +300,7 @@ export default function SalesHistory() {
                   <th>Invoice</th>
                   <th>Date & Time</th>
                   <th>Customer</th>
+                  <th>Counter / Branch</th>
                   <th>Items</th>
                   <th>Discount</th>
                   <th>GST</th>
@@ -220,6 +322,10 @@ export default function SalesHistory() {
                     <td>
                       {inv.customerName || <span className="muted">Walk-in</span>}
                       {inv.customerPhone ? <div className="muted tiny">{inv.customerPhone}</div> : null}
+                    </td>
+                    <td>
+                      <div style={{ fontWeight: 600 }}>{inv.counterName || 'Counter 1'}</div>
+                      <div className="muted tiny">{inv.branchName || 'Main Branch'}</div>
                     </td>
                     <td>
                       {inv.items.reduce((s, it) => s + it.qty, 0)} units

@@ -1,15 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import JsBarcode from 'jsbarcode';
-import { Scissors } from 'lucide-react';
+import { Scissors, CheckCircle2, Store } from 'lucide-react';
 import {
   playPaperTearSound,
   playPaytmSuccessChime,
   playPrinterFeedSound,
 } from '../utils/audioUtils';
 import { formatINR } from '../utils/currencyUtils';
-import { formatDateTime } from '../utils/dateUtils';
 import { paymentLabel } from '../utils/receiptUtils';
-import CelebrationPoppers from './CelebrationPoppers';
 
 export default function PrinterAnimationModal({
   open,
@@ -20,7 +18,6 @@ export default function PrinterAnimationModal({
 }) {
   const [progress, setProgress] = useState(0);
   const [isTearing, setIsTearing] = useState(false);
-  const [popperTrigger, setPopperTrigger] = useState(0);
   const barcodeRef = useRef(null);
 
   // Restart print simulation & sound whenever modal opens
@@ -33,21 +30,20 @@ export default function PrinterAnimationModal({
 
     setProgress(0);
     setIsTearing(false);
-    setPopperTrigger((k) => k + 1); // Confetti celebration burst
-    playPaytmSuccessChime(); // Success announcement chime
-    playPrinterFeedSound(); // Thermal printer feed mechanical ticking
+    playPaytmSuccessChime(); // Professional soundbox confirmation chime
+    playPrinterFeedSound(); // Thermal printer mechanical paper feed sound
 
     let currentProgress = 0;
     const interval = setInterval(() => {
-      currentProgress += 4;
+      currentProgress += 5;
       setProgress((prev) => {
-        const next = Math.min(100, prev + 4);
+        const next = Math.min(100, prev + 5);
         if (next >= 100) {
           clearInterval(interval);
         }
         return next;
       });
-    }, 35);
+    }, 32);
 
     return () => clearInterval(interval);
   }, [open, invoice]);
@@ -86,7 +82,7 @@ export default function PrinterAnimationModal({
   const handleTearAndClose = () => {
     if (isTearing) return;
     setIsTearing(true);
-    playPaperTearSound(); // Realistic crisp paper bite and rip sound
+    playPaperTearSound(); // Crisp realistic paper bite and tear sound
 
     setTimeout(() => {
       if (onStartNewBill) {
@@ -94,7 +90,7 @@ export default function PrinterAnimationModal({
       } else if (onClose) {
         onClose();
       }
-    }, 420);
+    }, 400);
   };
 
   // Keyboard shortcut listener: Enter / Space / Escape tears bill
@@ -120,98 +116,46 @@ export default function PrinterAnimationModal({
       aria-modal="true"
       aria-label="Click anywhere to tear receipt and continue"
     >
-      {/* Subtle Background Celebration Poppers & Confetti */}
-      <CelebrationPoppers triggerKey={popperTrigger} />
-
-      {/* 3D Perspective Container for Printer & Paper */}
+      {/* 3D Perspective Container for Vector Illustration Printer & Paper */}
       <div className="printer-direct-bill-container">
-        {/* Physical Thermal Printer Top Hardware Housing */}
-        <div
-          style={{
-            width: 'min(360px, 94vw)',
-            height: 68,
-            background: 'linear-gradient(180deg, #1e293b 0%, #0f172a 100%)',
-            borderRadius: '16px 16px 4px 4px',
-            boxShadow: '0 20px 45px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,255,255,0.15)',
-            padding: '10px 16px 6px',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-            border: '1px solid #334155',
-            position: 'relative',
-            zIndex: 15,
-          }}
-        >
-          {/* Hardware LEDs & Status */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span
-                style={{
-                  width: 9,
-                  height: 9,
-                  borderRadius: '50%',
-                  background: '#00ba7c',
-                  boxShadow: '0 0 10px #00ba7c',
-                  display: 'inline-block',
-                }}
-                title="Power On"
-              />
-              <span
-                style={{
-                  width: 9,
-                  height: 9,
-                  borderRadius: '50%',
-                  background: progress < 100 ? '#00b9f5' : '#64748b',
-                  boxShadow: progress < 100 ? '0 0 10px #00b9f5' : 'none',
-                  animation: progress < 100 ? 'pulse 0.5s infinite alternate' : 'none',
-                  display: 'inline-block',
-                }}
-                title="Paper Feed"
-              />
-              <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#94a3b8', letterSpacing: '0.06em' }}>
-                {progress < 100 ? 'PRINTING BILL...' : 'PRINT READY ✓'}
-              </span>
+        {/* Vector Thermal Printer Hardware Housing */}
+        <div className="vector-printer-housing">
+          {/* Top Chamfered Bezel with Brushed Finish */}
+          <div className="vector-printer-top-bezel">
+            <div className="vector-printer-brand">
+              <span className="vector-printer-logo-mark">⚡</span>
+              <span className="vector-printer-model">THERMAL 80-PRO</span>
             </div>
 
-            <div
-              style={{
-                fontSize: '0.65rem',
-                fontWeight: 800,
-                color: '#38bdf8',
-                background: 'rgba(56, 189, 248, 0.14)',
-                padding: '2px 8px',
-                borderRadius: 4,
-                letterSpacing: '0.08em',
-                border: '1px solid rgba(56, 189, 248, 0.3)',
-              }}
-            >
-              THERMAL POS 80MM
+            {/* Micro Status LEDs */}
+            <div className="vector-printer-status-bar">
+              <div className="vector-led-group">
+                <span className="vector-led led-green" title="Power On" />
+                <span className="vector-led-text">ONLINE</span>
+              </div>
+              <div className="vector-led-group">
+                <span
+                  className={`vector-led ${progress < 100 ? 'led-cyan pulse' : 'led-muted'}`}
+                  title="Print Feed"
+                />
+                <span className="vector-led-text">
+                  {progress < 100 ? 'FEEDING' : 'READY'}
+                </span>
+              </div>
             </div>
           </div>
 
-          {/* Metal Cutter Blade Slot with Steel Serrated Teeth */}
-          <div
-            style={{
-              width: '100%',
-              height: 12,
-              background: '#020617',
-              borderRadius: 3,
-              boxShadow: 'inset 0 3px 6px rgba(0,0,0,0.95)',
-              position: 'relative',
-              overflow: 'hidden',
-            }}
-          >
-            {/* Stainless steel triangular serrated cutter blade */}
+          {/* Recessed Cutter Slot with Precision Laser Teeth */}
+          <div className="vector-printer-cutter-slot">
             <svg
-              width="100%"
-              height="8"
+              className="vector-cutter-teeth"
               viewBox="0 0 100 8"
               preserveAspectRatio="none"
-              style={{ position: 'absolute', bottom: 0, left: 0, right: 0, display: 'block' }}
+              aria-hidden="true"
             >
               <polygon
                 points="0,0 2,7 4,0 6,7 8,0 10,7 12,0 14,7 16,0 18,7 20,0 22,7 24,0 26,7 28,0 30,7 32,0 34,7 36,0 38,7 40,0 42,7 44,0 46,7 48,0 50,7 52,0 54,7 56,0 58,7 60,0 62,7 64,0 66,7 68,0 70,7 72,0 74,7 76,0 78,7 80,0 82,7 84,0 86,7 88,0 90,7 92,0 94,7 96,0 98,7 100,0"
-                fill="#94a3b8"
+                fill="#cbd5e1"
               />
             </svg>
           </div>
@@ -219,177 +163,115 @@ export default function PrinterAnimationModal({
 
         {/* The Animated Thermal Receipt Paper */}
         <div
-          className={`printer-direct-bill ${isTearing ? 'tearing' : ''}`}
+          className={`printer-direct-bill vector-receipt-paper ${isTearing ? 'tearing' : ''}`}
           style={{
-            width: 'min(330px, 88vw)',
-            maxHeight: 'min(440px, 58vh)',
-            height: `${Math.max(65, (progress / 100) * 400)}px`,
-            transition: isTearing ? undefined : 'height 0.12s linear',
-            background: '#ffffff',
-            boxShadow: '0 20px 45px rgba(0,0,0,0.35)',
-            borderRadius: '0 0 6px 6px',
-            overflowY: 'auto',
-            padding: '14px 16px 20px',
-            fontFamily: '"Courier New", Courier, monospace',
-            fontSize: 11,
-            lineHeight: 1.34,
-            color: '#0f172a',
-            marginTop: -3,
-            zIndex: 10,
-            position: 'relative',
-            borderLeft: '1px solid #cbd5e1',
-            borderRight: '1px solid #cbd5e1',
+            height: `${Math.max(70, (progress / 100) * 410)}px`,
           }}
         >
-          {/* Serrated Bottom Edge */}
-          <div
-            style={{
-              position: 'absolute',
-              bottom: 0,
-              left: 0,
-              right: 0,
-              height: 6,
-              background: 'radial-gradient(circle, transparent, transparent 50%, #f1f5f9 50%, #f1f5f9 100%)',
-              backgroundSize: '8px 8px',
-            }}
-          />
+          {/* Serrated Bottom Edge Pattern */}
+          <div className="receipt-serrated-edge" />
 
           {/* Receipt Store Header */}
-          <div style={{ textAlign: 'center', borderBottom: '1px dashed #94a3b8', paddingBottom: 6, marginBottom: 6 }}>
-            <div style={{ fontWeight: 800, fontSize: 13, textTransform: 'uppercase', color: '#002970' }}>
-              {shop?.name || 'Retail Supermarket'}
+          <div className="receipt-header-section">
+            <div className="receipt-store-title">
+              {shop?.name || 'Nani Super Mart'}
             </div>
-            <div style={{ fontSize: 9.5, color: '#64748b' }}>{shop?.address}</div>
-            <div style={{ fontSize: 9.5, color: '#64748b' }}>Ph: {shop?.phone}</div>
-            {shop?.gstin && <div style={{ fontSize: 9, color: '#64748b' }}>GSTIN: {shop.gstin}</div>}
+            <div className="receipt-sub-text">{shop?.address}</div>
+            <div className="receipt-sub-text">Ph: {shop?.phone}</div>
+            {shop?.gstin ? (
+              <div className="receipt-sub-text">GSTIN: {shop.gstin}</div>
+            ) : null}
+
+            {/* Branch & Counter Tag */}
+            <div className="receipt-branch-counter-tag">
+              <span>{invoice.branchName || 'Main Branch'}</span>
+              <span>•</span>
+              <span>{invoice.counterName || 'Counter 1'}</span>
+            </div>
           </div>
 
-          {/* Receipt Bill Meta */}
-          <div style={{ fontSize: 9.5, borderBottom: '1px dashed #94a3b8', paddingBottom: 4, marginBottom: 6 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+          {/* Receipt Meta & Customer Details */}
+          <div className="receipt-meta-section">
+            <div className="receipt-meta-row">
               <span>Bill: <strong>{invoice.invoiceNumber || 'INV-TEMP'}</strong></span>
               <span>{new Date(invoice.createdAt || Date.now()).toLocaleDateString('en-IN')}</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span>Cust: {invoice.customerName || 'Walk-in'}</span>
-              <span style={{ fontWeight: 700, color: '#16a34a' }}>
-                {paymentLabel(invoice.paymentMethod || 'cash').toUpperCase()} (PAID ✓)
+            <div className="receipt-meta-row">
+              <span>Cust: {invoice.customerName || 'Walk-in Customer'}</span>
+              <span className="receipt-paid-badge">
+                <CheckCircle2 size={10} style={{ display: 'inline', marginRight: 2 }} />
+                {paymentLabel(invoice.paymentMethod || 'cash').toUpperCase()}
               </span>
             </div>
+            {invoice.cashierName ? (
+              <div className="receipt-meta-row" style={{ color: '#64748b' }}>
+                <span>Cashier: {invoice.cashierName}</span>
+                <span>{new Date(invoice.createdAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+              </div>
+            ) : null}
           </div>
 
           {/* Items Table */}
-          <div style={{ marginBottom: 6 }}>
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: '2fr 1fr 1fr',
-                fontWeight: 700,
-                borderBottom: '1px dashed #94a3b8',
-                paddingBottom: 2,
-                fontSize: 9.5,
-              }}
-            >
+          <div className="receipt-items-section">
+            <div className="receipt-items-header">
               <span>Item</span>
               <span style={{ textAlign: 'center' }}>Qty</span>
               <span style={{ textAlign: 'right' }}>Total</span>
             </div>
 
             {invoice.items?.map((it, idx) => (
-              <div
-                key={idx}
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: '2fr 1fr 1fr',
-                  padding: '2px 0',
-                  fontSize: 9.5,
-                }}
-              >
-                <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              <div key={idx} className="receipt-item-row">
+                <span className="receipt-item-name" title={it.name}>
                   {it.name}
                 </span>
                 <span style={{ textAlign: 'center' }}>{it.qty}</span>
-                <span style={{ textAlign: 'right', fontWeight: 600 }}>{formatINR(it.lineTotalPaise)}</span>
+                <span style={{ textAlign: 'right', fontWeight: 600 }}>
+                  {formatINR(it.lineTotalPaise)}
+                </span>
               </div>
             ))}
           </div>
 
-          {/* Receipt Totals */}
-          <div
-            style={{
-              borderTop: '1px dashed #94a3b8',
-              paddingTop: 4,
-              marginBottom: 6,
-              fontSize: 9.5,
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+          {/* Receipt Totals Summary */}
+          <div className="receipt-totals-section">
+            <div className="receipt-total-row">
               <span>Subtotal</span>
               <span>{formatINR(invoice.subtotalPaise)}</span>
             </div>
 
-            {invoice.discountPaise > 0 && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#16a34a' }}>
+            {invoice.discountPaise > 0 ? (
+              <div className="receipt-total-row text-discount">
                 <span>Discount</span>
                 <span>-{formatINR(invoice.discountPaise)}</span>
               </div>
-            )}
+            ) : null}
 
-            {invoice.taxPaise > 0 && (
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            {invoice.taxPaise > 0 ? (
+              <div className="receipt-total-row">
                 <span>GST Tax</span>
                 <span>{formatINR(invoice.taxPaise)}</span>
               </div>
-            )}
+            ) : null}
 
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                fontWeight: 800,
-                fontSize: 12,
-                borderTop: '1px dashed #000',
-                marginTop: 2,
-                paddingTop: 3,
-              }}
-            >
+            <div className="receipt-grand-total-row">
               <span>GRAND TOTAL</span>
               <span>{formatINR(invoice.grandTotalPaise)}</span>
             </div>
           </div>
 
           {/* Barcode Graphic */}
-          <div style={{ textAlign: 'center', marginTop: 4, marginBottom: 2 }}>
+          <div className="receipt-barcode-wrapper">
             <svg ref={barcodeRef} style={{ maxWidth: '100%' }} />
           </div>
 
-          <div style={{ textAlign: 'center', fontSize: 8.5, color: '#64748b' }}>
-            *** Thank You! Visit Again ***
+          <div className="receipt-footer-text">
+            *** Thank You! Please Visit Again ***
           </div>
         </div>
 
-        {/* Floating Tear Instruction Pill */}
-        <div
-          className="tear-hint-pill"
-          style={{
-            marginTop: 22,
-            background: 'rgba(15, 23, 42, 0.85)',
-            backdropFilter: 'blur(10px)',
-            WebkitBackdropFilter: 'blur(10px)',
-            border: '1px solid rgba(255, 255, 255, 0.25)',
-            color: '#ffffff',
-            padding: '10px 22px',
-            borderRadius: 999,
-            fontSize: '0.88rem',
-            fontWeight: 700,
-            boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            zIndex: 20,
-          }}
-        >
-          <Scissors size={18} color="#38bdf8" />
+        {/* Minimalist Tear Instruction Pill */}
+        <div className="tear-hint-pill">
+          <Scissors size={15} color="#38bdf8" />
           <span>Click anywhere to tear bill & continue</span>
         </div>
       </div>

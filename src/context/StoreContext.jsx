@@ -35,10 +35,75 @@ export function StoreProvider({ children }) {
     showToast('Demo data restored.', 'success');
   }, [showToast]);
 
+  const setActiveBranch = useCallback((branchId) => {
+    update((prev) => {
+      const branch = (prev.branches || []).find((b) => b.id === branchId);
+      const firstCounter = branch?.counters?.[0]?.id || 'CNT-01';
+      return {
+        ...prev,
+        activeBranchId: branchId,
+        activeCounterId: firstCounter,
+      };
+    });
+  }, [update]);
+
+  const setActiveCounter = useCallback((counterId) => {
+    update((prev) => ({
+      ...prev,
+      activeCounterId: counterId,
+    }));
+  }, [update]);
+
+  const addCategory = useCallback((name) => {
+    const trimmed = String(name || '').trim();
+    if (!trimmed) throw new Error('Category name cannot be empty.');
+    update((prev) => {
+      const existing = prev.categories || [];
+      if (existing.some((c) => c.toLowerCase() === trimmed.toLowerCase())) {
+        throw new Error(`Category "${trimmed}" already exists.`);
+      }
+      return {
+        ...prev,
+        categories: [...existing, trimmed],
+      };
+    });
+  }, [update]);
+
+  const updateCategory = useCallback((oldName, newName) => {
+    const trimmed = String(newName || '').trim();
+    if (!trimmed) throw new Error('Category name cannot be empty.');
+    update((prev) => {
+      const existing = prev.categories || [];
+      const updatedCategories = existing.map((c) => (c === oldName ? trimmed : c));
+      const updatedProducts = (prev.products || []).map((p) =>
+        p.category === oldName ? { ...p, category: trimmed } : p
+      );
+      return {
+        ...prev,
+        categories: updatedCategories,
+        products: updatedProducts,
+      };
+    });
+  }, [update]);
+
+  const deleteCategory = useCallback((name) => {
+    update((prev) => {
+      const existing = prev.categories || [];
+      return {
+        ...prev,
+        categories: existing.filter((c) => c !== name),
+      };
+    });
+  }, [update]);
+
   const value = useMemo(() => ({
     state,
     shop: state.shop,
     settings: state.settings,
+    branches: state.branches || [],
+    categories: state.categories || [],
+    activeBranchId: state.activeBranchId || 'BR-001',
+    activeCounterId: state.activeCounterId || 'CNT-01',
     products: state.products,
     invoices: state.invoices,
     movements: state.movements,
@@ -52,10 +117,26 @@ export function StoreProvider({ children }) {
     heldBills: state.heldBills || [],
     update,
     resetDemo,
+    setActiveBranch,
+    setActiveCounter,
+    addCategory,
+    updateCategory,
+    deleteCategory,
     toast,
     showToast,
     clearToast: () => setToast(null),
-  }), [state, update, resetDemo, toast, showToast]);
+  }), [
+    state,
+    update,
+    resetDemo,
+    setActiveBranch,
+    setActiveCounter,
+    addCategory,
+    updateCategory,
+    deleteCategory,
+    toast,
+    showToast,
+  ]);
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
 }
