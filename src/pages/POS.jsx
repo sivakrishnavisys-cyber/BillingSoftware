@@ -12,6 +12,7 @@ import {
   History,
   Keyboard,
   Minus,
+  Package,
   PauseCircle,
   Plus,
   Printer,
@@ -48,6 +49,24 @@ import { lookupProductByCode, lookupProductOrVariant } from '../utils/barcodeUti
 import { playBeep, playSuccessChime } from '../utils/audioUtils';
 import { formatINR, parseRupeeInput } from '../utils/currencyUtils';
 import { exportInvoicePdf } from '../utils/pdfReceiptUtils';
+
+const getCategoryIcon = (cat) => {
+  const c = (cat || '').toLowerCase();
+  if (c === 'all') return '🛍️';
+  if (c.includes('dairy') || c.includes('milk') || c.includes('curd') || c.includes('paneer') || c.includes('cheese')) return '🥛';
+  if (c.includes('beverage') || c.includes('drink') || c.includes('juice') || c.includes('soda') || c.includes('tea') || c.includes('coffee') || c.includes('water')) return '🥤';
+  if (c.includes('snack') || c.includes('biscuit') || c.includes('cookie') || c.includes('chips') || c.includes('namkeen')) return '🍪';
+  if (c.includes('choc') || c.includes('sweet') || c.includes('candy') || c.includes('toffee')) return '🍫';
+  if (c.includes('bakery') || c.includes('bread') || c.includes('cake') || c.includes('bun')) return '🍞';
+  if (c.includes('grain') || c.includes('rice') || c.includes('flour') || c.includes('atta') || c.includes('dal') || c.includes('pulses') || c.includes('staple') || c.includes('grocery') || c.includes('oil') || c.includes('sugar') || c.includes('salt')) return '🌾';
+  if (c.includes('fruit') || c.includes('veg') || c.includes('vegetable')) return '🍎';
+  if (c.includes('spice') || c.includes('masala') || c.includes('sauce') || c.includes('condiment')) return '🧂';
+  if (c.includes('clean') || c.includes('detergent') || c.includes('soap') || c.includes('wash') || c.includes('hygiene')) return '🧼';
+  if (c.includes('care') || c.includes('personal') || c.includes('beauty') || c.includes('shampoo') || c.includes('cream')) return '🧴';
+  if (c.includes('stationery') || c.includes('pen') || c.includes('book') || c.includes('paper')) return '✏️';
+  if (c.includes('electric') || c.includes('battery') || c.includes('wire') || c.includes('bulb')) return '🔌';
+  return '🏷️';
+};
 
 export default function POS() {
   const {
@@ -117,6 +136,7 @@ export default function POS() {
 
   const searchInputRef = useRef(null);
   const lockingRef = useRef(false);
+  const productGridRef = useRef(null);
 
   // Focus search input on mount on desktop
   useEffect(() => {
@@ -127,6 +147,32 @@ export default function POS() {
 
   const liveProducts = useMemo(() => products.filter((p) => p.status !== 'inactive'), [products]);
 
+  // Derived category list ensuring custom categories on products are included
+  const allCategories = useMemo(() => {
+    const set = new Set(categories);
+    (liveProducts || []).forEach((p) => {
+      if (p.category) set.add(p.category);
+    });
+    return Array.from(set);
+  }, [categories, liveProducts]);
+
+  // Product counts per category
+  const categoryCounts = useMemo(() => {
+    const map = {};
+    (liveProducts || []).forEach((p) => {
+      const cat = p.category || 'Other';
+      map[cat] = (map[cat] || 0) + 1;
+    });
+    return map;
+  }, [liveProducts]);
+
+  const handleCategoryChange = (cat) => {
+    setSelectedCategory(cat);
+    if (productGridRef.current) {
+      productGridRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
   // Omni-search suggestions (filtered when query >= 1 char)
   const searchMatches = useMemo(() => {
     if (!omniQuery.trim()) return [];
@@ -135,8 +181,11 @@ export default function POS() {
 
   // Quick Catalog grid items
   const quickCatalogItems = useMemo(() => {
-    if (selectedCategory === 'All') return liveProducts.slice(0, 24);
-    return liveProducts.filter((p) => p.category === selectedCategory).slice(0, 24);
+    let list = liveProducts;
+    if (selectedCategory !== 'All') {
+      list = list.filter((p) => p.category === selectedCategory);
+    }
+    return list;
   }, [liveProducts, selectedCategory]);
 
   const activeCustomer = useMemo(() => {
@@ -919,22 +968,23 @@ export default function POS() {
 
           {/* Quick Product Shelf Catalog */}
           <div className="card pos-catalog-shelf">
-            <div className="shelf-header">
+            {/* Desktop Shelf Header (horizontal categories, remains unchanged on desktop) */}
+            <div className="shelf-header desktop-shelf-header">
               <span className="small muted">{t('quick_catalog')}</span>
               <div className="shelf-categories scrollable-pills">
                 <button
                   type="button"
                   className={`cat-chip ${selectedCategory === 'All' ? 'active' : ''}`}
-                  onClick={() => setSelectedCategory('All')}
+                  onClick={() => handleCategoryChange('All')}
                 >
                   {t('all_items')}
                 </button>
-                {categories.map((cat) => (
+                {allCategories.map((cat) => (
                   <button
                     type="button"
                     key={cat}
                     className={`cat-chip ${selectedCategory === cat ? 'active' : ''}`}
-                    onClick={() => setSelectedCategory(cat)}
+                    onClick={() => handleCategoryChange(cat)}
                   >
                     {cat}
                   </button>
@@ -942,36 +992,139 @@ export default function POS() {
               </div>
             </div>
 
-            <div className="compact-product-grid">
-              {quickCatalogItems.map((p) => {
-                const isOut = p.quantity <= 0;
-                const hasVariants = Array.isArray(p.variants) && p.variants.length > 0;
-                return (
-                  <button
-                    type="button"
-                    key={p.id}
-                    className={`shelf-item-card ${isOut ? 'out' : ''}`}
-                    onClick={() => handleProductSelection(p)}
-                    disabled={isOut}
-                    title={isOut ? 'Out of Stock' : hasVariants ? `Tap to choose size for ${p.name}` : `Tap to add ${p.name}`}
-                  >
-                    <span className="shelf-name">{p.name}</span>
-                    {hasVariants ? (
-                      <span className="badge badge-in" style={{ fontSize: '0.62rem', padding: '1px 5px', width: 'fit-content' }}>
-                        {p.variants.length} Sizes Available
-                      </span>
-                    ) : null}
-                    <div className="shelf-price-row">
-                      <strong className="shelf-price">
-                        {formatINR(p.sellingPricePaise)}
-                      </strong>
-                      <span className={`shelf-stock ${p.quantity <= p.minStock ? 'low' : ''}`}>
-                        {isOut ? 'Out' : `${p.quantity} ${p.unit}`}
-                      </span>
+            {/* Split Layout: On Mobile -> Left Category Sidebar + Right Product Grid (2 or 3 cols); On Desktop -> standard product grid */}
+            <div className="pos-catalog-split-body">
+              {/* Mobile Category Sidebar (visible only on mobile) */}
+              <aside className="pos-catalog-sidebar" aria-label="Catalog Categories">
+                <button
+                  type="button"
+                  className={`cat-sidebar-item ${selectedCategory === 'All' ? 'active' : ''}`}
+                  onClick={() => handleCategoryChange('All')}
+                >
+                  <span className="cat-sidebar-icon">🛍️</span>
+                  <span className="cat-sidebar-label">{t('all_items')}</span>
+                  <span className="cat-sidebar-count">{liveProducts.length}</span>
+                </button>
+                {allCategories.map((cat) => {
+                  const count = categoryCounts[cat] || 0;
+                  return (
+                    <button
+                      type="button"
+                      key={cat}
+                      className={`cat-sidebar-item ${selectedCategory === cat ? 'active' : ''}`}
+                      onClick={() => handleCategoryChange(cat)}
+                    >
+                      <span className="cat-sidebar-icon">{getCategoryIcon(cat)}</span>
+                      <span className="cat-sidebar-label">{cat}</span>
+                      <span className="cat-sidebar-count">{count}</span>
+                    </button>
+                  );
+                })}
+              </aside>
+
+              {/* Products Area */}
+              <div className="pos-catalog-products-area">
+                {/* Mobile Catalog Banner (shows active category & total count) */}
+                <div className="pos-catalog-mobile-header">
+                  <div className="pos-catalog-mobile-header-title">
+                    <span style={{ fontSize: '1.05rem' }}>
+                      {getCategoryIcon(selectedCategory)}
+                    </span>
+                    <strong>{selectedCategory === 'All' ? t('all_items') : selectedCategory}</strong>
+                    <span>({quickCatalogItems.length} items)</span>
+                  </div>
+                  {selectedCategory !== 'All' ? (
+                    <button
+                      type="button"
+                      className="btn-link tiny"
+                      onClick={() => handleCategoryChange('All')}
+                      style={{ fontSize: '0.74rem' }}
+                    >
+                      Show All
+                    </button>
+                  ) : null}
+                </div>
+
+                <div className="compact-product-grid" ref={productGridRef}>
+                  {quickCatalogItems.length === 0 ? (
+                    <div className="pos-catalog-empty">
+                      <Package size={34} color="#94a3b8" />
+                      <p className="muted small" style={{ margin: '6px 0 0' }}>
+                        No products found in {selectedCategory}
+                      </p>
                     </div>
-                  </button>
-                );
-              })}
+                  ) : (
+                    quickCatalogItems.map((p) => {
+                      const isOut = p.quantity <= 0;
+                      const hasVariants = Array.isArray(p.variants) && p.variants.length > 0;
+                      const inCartQty = items
+                        .filter((it) => it.productId === p.id)
+                        .reduce((sum, it) => sum + it.qty, 0);
+
+                      return (
+                        <div
+                          key={p.id}
+                          className={`shelf-item-card ${isOut ? 'out' : ''} ${inCartQty > 0 ? 'is-in-cart' : ''}`}
+                          onClick={() => {
+                            if (!isOut) handleProductSelection(p);
+                          }}
+                          role="button"
+                          tabIndex={isOut ? -1 : 0}
+                          title={
+                            isOut
+                              ? 'Out of Stock'
+                              : hasVariants
+                              ? `Tap to choose size for ${p.name}`
+                              : `Tap to add ${p.name}`
+                          }
+                        >
+                          {inCartQty > 0 ? (
+                            <span className="shelf-cart-badge">
+                              {inCartQty} in cart
+                            </span>
+                          ) : null}
+
+                          <div className="shelf-card-top">
+                            <span className="shelf-name">{p.name}</span>
+                            {hasVariants ? (
+                              <span
+                                className="badge badge-in shelf-variant-badge"
+                                style={{ fontSize: '0.62rem', padding: '1px 5px', width: 'fit-content' }}
+                              >
+                                {p.variants.length} Sizes
+                              </span>
+                            ) : null}
+                          </div>
+
+                          <div className="shelf-price-row">
+                            <div className="shelf-price-col">
+                              <strong className="shelf-price">
+                                {formatINR(p.sellingPricePaise)}
+                              </strong>
+                              <span className={`shelf-stock ${p.quantity <= p.minStock ? 'low' : ''}`}>
+                                {isOut ? 'Out' : `${p.quantity} ${p.unit}`}
+                              </span>
+                            </div>
+
+                            <button
+                              type="button"
+                              className="shelf-quick-add-btn"
+                              disabled={isOut}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (!isOut) handleProductSelection(p);
+                              }}
+                              aria-label={`Add ${p.name}`}
+                            >
+                              <Plus size={14} />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </section>
