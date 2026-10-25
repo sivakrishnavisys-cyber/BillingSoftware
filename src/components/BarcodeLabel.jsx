@@ -21,24 +21,33 @@ export default function BarcodeLabel({
   size = '50x30',
   customPackedDate = '',
   customExpiryDate = '',
+  shopName = 'Nani Super Mart',
+  showStoreHeader = true,
 }) {
   const svgRef = useRef(null);
 
   useEffect(() => {
     if (!svgRef.current || !product?.barcode) return;
     try {
-      JsBarcode(svgRef.current, product.barcode, {
+      const barcodeHeight = size === '38x25' ? 24 : size === '40x30' ? 30 : 36;
+      const fontSize = size === '38x25' ? 8.5 : size === '40x30' ? 9.5 : 10.5;
+      const barcodeWidth = size === '38x25' ? 1.05 : size === '40x30' ? 1.15 : 1.25;
+
+      JsBarcode(svgRef.current, String(product.barcode), {
         format: 'CODE128',
         displayValue: true,
-        fontSize: size === '38x25' ? 9 : 11,
-        height: size === '38x25' ? 28 : size === '40x30' ? 34 : 40,
-        margin: 2,
-        width: size === '38x25' ? 1.1 : 1.3,
+        fontSize,
+        font: 'monospace',
+        fontOptions: 'bold',
+        textMargin: 2,
+        height: barcodeHeight,
+        margin: 1,
+        width: barcodeWidth,
         background: '#ffffff',
-        lineColor: '#111111',
+        lineColor: '#0f172a',
       });
     } catch {
-      /* invalid barcode characters */
+      // fail-safe on invalid barcode characters
     }
   }, [product?.barcode, size]);
 
@@ -48,20 +57,42 @@ export default function BarcodeLabel({
   const expiry = customExpiryDate || product.expiryDate || '';
 
   return (
-    <div className={`barcode-label size-${size}`}>
-      <p className="label-name">{product.name}</p>
-      
-      <div className="label-sub-row">
-        <span className="label-meta">SKU: {product.sku}</span>
-        <strong className="label-price">{formatINR(product.sellingPricePaise)}</strong>
+    <div className={`retail-sticker-label size-${size}`}>
+      {/* Sticker Header: Store Name & Department */}
+      {showStoreHeader && size !== '38x25' ? (
+        <div className="sticker-header-strip">
+          <span className="sticker-shop-name">{shopName}</span>
+          <span className="sticker-cat-tag">{product.category || 'Retail'}</span>
+        </div>
+      ) : null}
+
+      {/* Product Name Title */}
+      <div className="sticker-product-title" title={product.name}>
+        {product.name}
       </div>
 
-      <svg ref={svgRef} role="img" aria-label={`Barcode ${product.barcode}`} />
+      {/* Meta Row: SKU & High-Contrast MRP Tag */}
+      <div className="sticker-meta-row">
+        <span className="sticker-sku-tag">{product.sku}</span>
+        <div className="sticker-mrp-block">
+          <span className="sticker-mrp-label">MRP</span>
+          <strong className="sticker-mrp-value">{formatINR(product.sellingPricePaise)}</strong>
+        </div>
+      </div>
 
-      {/* Date of Packed & Date of Expiry */}
-      <div className="label-dates-row">
-        <span className="date-pkd">Pkd: {formatShortDate(packed)}</span>
-        {expiry ? <span className="date-exp">Exp: {formatShortDate(expiry)}</span> : null}
+      {/* Barcode SVG Container */}
+      <div className="sticker-barcode-center">
+        <svg ref={svgRef} role="img" aria-label={`Barcode ${product.barcode}`} />
+      </div>
+
+      {/* Bottom Dates Strip: Pkd & Exp */}
+      <div className="sticker-dates-strip">
+        <span className="sticker-date-pkd">Pkd: {formatShortDate(packed)}</span>
+        {expiry ? (
+          <span className="sticker-date-exp">Exp: {formatShortDate(expiry)}</span>
+        ) : (
+          <span className="sticker-date-unit">Net: 1 {product.unit || 'pcs'}</span>
+        )}
       </div>
     </div>
   );
